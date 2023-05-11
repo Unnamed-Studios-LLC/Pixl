@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl", "Pixl\Pixl.csproj", "{0D212C03-FF1D-4F4B-97BD-2DD36BF757DD}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Demo", "Pixl.Demo\Pixl.Demo.csproj", "{04932DD6-9CD8-4978-A164-8349EE3DAE9B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Player.Win", "Pixl.Player.Win\Pixl.Player.Win.csproj", "{A81C049E-8554-445B-95B8-771D08119DBE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0D212C03-FF1D-4F4B-97BD-2DD36BF757DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D212C03-FF1D-4F4B-97BD-2DD36BF757DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D212C03-FF1D-4F4B-97BD-2DD36BF757DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D212C03-FF1D-4F4B-97BD-2DD36BF757DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A81C049E-8554-445B-95B8-771D08119DBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A81C049E-8554-445B-95B8-771D08119DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A81C049E-8554-445B-95B8-771D08119DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A81C049E-8554-445B-95B8-771D08119DBE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E2987D16-295A-4FB4-AF1C-FD1EAB7072CD}
+	EndGlobalSection
+EndGlobal
