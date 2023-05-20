@@ -2,21 +2,22 @@
 
 public abstract class GraphicsResource : Resource
 {
-    private bool _created = false;
+    internal Graphics? Graphics { get; set; }
 
     internal void Create()
     {
-        if (!Game.Current.Graphics.Setup) return;
-        if (_created) throw new Exception($"{nameof(GraphicsResource)} already created!");
-        OnCreate();
-        _created = true;
+        var graphics = Game.Current.Graphics;
+        if (!graphics.Setup) return;
+        if (Graphics != null) throw new Exception($"{nameof(GraphicsResource)} already created!");
+        Graphics = graphics;
+        OnCreate(graphics);
     }
 
     internal void Destroy()
     {
-        if (!_created || !Game.Current.Graphics.Setup) return;
-        OnDestroy();
-        _created = false;
+        if (Graphics == null || !Graphics.Setup) return;
+        OnDestroy(Graphics);
+        Graphics = null;
     }
 
     internal override void OnAdd()
@@ -33,16 +34,6 @@ public abstract class GraphicsResource : Resource
         Destroy();
     }
 
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-
-        if (disposing)
-        {
-            Destroy();
-        }
-    }
-
-    protected virtual void OnCreate() { }
-    protected virtual void OnDestroy() { }
+    internal virtual void OnCreate(Graphics graphics) { }
+    internal virtual void OnDestroy(Graphics graphics) { }
 }

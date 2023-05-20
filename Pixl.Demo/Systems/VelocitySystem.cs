@@ -69,7 +69,7 @@ namespace Pixl.Demo.Systems
         public override void OnFixedUpdate()
         {
             var total = Time.FixedTotal;
-            Scene?.Entities.ForEach((ref Transform transform, ref Velocity velocity) =>
+            Scene.Entities.ParallelForEach((ref Velocity velocity) =>
             {
                 var timeStep = total - velocity.Time;
                 velocity.Position += velocity.Vector * timeStep;
@@ -115,6 +115,16 @@ namespace Pixl.Demo.Systems
                     cameraTransform.Scale /= 1.2f;
                 }
 
+                var rotateSpeed = 180 * Time.UpdateDelta;
+                if (Input.GetKey(KeyCode.C))
+                {
+                    cameraTransform.Rotation.Z += rotateSpeed;
+                }
+                if (Input.GetKey(KeyCode.V))
+                {
+                    cameraTransform.Rotation.Z -= rotateSpeed;
+                }
+
                 if (Input.GetKey(KeyCode.R))
                 {
                     cameraTransform.Position = Vec3.Zero;
@@ -124,10 +134,16 @@ namespace Pixl.Demo.Systems
                 {
                     CreateEntities(10_000);
                 }
+
+                if (Input.GetKeyDown(KeyCode.G))
+                {
+                    Application.GraphicsApi = Application.GraphicsApi == GraphicsApi.DirectX ? GraphicsApi.Vulkan : GraphicsApi.DirectX;
+                }
             }
 
             var total = Time.Total;
-            Scene.Entities.ForEach((ref Transform transform, ref Velocity velocity) =>
+            var delta = Time.UpdateDelta;
+            Scene.Entities.ParallelForEach((ref Transform transform, ref Velocity velocity) =>
             {
                 var timeStep = total - velocity.Time;
                 transform.Position = velocity.Position + velocity.Vector * timeStep;
@@ -176,7 +192,7 @@ namespace Pixl.Demo.Systems
 
         private void UpdateTitle()
         {
-            Window.Title = $"Pixl Demo - {_entityCount} - {_fps}";
+            Window.Title = $"Pixl Demo - {Application.GraphicsApi} - {Scene.Entities.Count} - {_fps}";
         }
     }
 }

@@ -6,60 +6,64 @@ namespace Pixl;
 
 public class Material : GraphicsResource
 {
-    private readonly string _vertexShaderPath;
-    private readonly string _fragmentShaderPath;
+    private readonly VertexShader _vertexShader;
+    private readonly FragmentShader _fragmentShader;
+    private readonly PropertyLayout _vertexPropertyLayout;
+    private readonly PropertyLayout _fragmentPropertyLayout;
     private readonly VertexLayoutDescription[] _vertexLayouts;
 
-    private Shader[]? _shaders;
-    private readonly Dictionary<Framebuffer, Pipeline> _pipelineCache = new();
+    private ResourceLayout[]? _resourceLayouts;
+    private PropertyResource[]? _vertexResources;
+    private ResourceSet? _vertexResourceSet;
+    private Veldrid.Shader[]? _shaders;
 
-    internal Material(string vertexShaderPath, string fragmentShaderPath, VertexLayoutDescription[] vertexLayouts)
+    internal Material(VertexShader vertexShader, FragmentShader fragmentShader, PropertyLayout vertexPropertyLayout, PropertyLayout fragmentPropertyLayout)
     {
-        _vertexShaderPath = vertexShaderPath;
-        _fragmentShaderPath = fragmentShaderPath;
-        _vertexLayouts = vertexLayouts;
+        _vertexShader = vertexShader;
+        _fragmentShader = fragmentShader;
+        _vertexPropertyLayout = vertexPropertyLayout;
+        _fragmentPropertyLayout = fragmentPropertyLayout;
+        _vertexLayouts = new VertexLayoutDescription[] { vertexShader.VertexLayoutDescription };
     }
 
-    internal static Material CreateDefault(Game game)
-    {
-        var vertexPath = Path.Combine(game.InternalAssetsPath, "default.vert");
-        var fragmentPath = Path.Combine(game.InternalAssetsPath, "default.frag");
+    internal uint VertexStride => _vertexShader.VertexLayoutDescription.Stride;
 
-        var vertexLayout = new VertexLayoutDescription(
-            new VertexElementDescription("Position", VertexElementFormat.Float3, VertexElementSemantic.TextureCoordinate),
-            new VertexElementDescription("Color", VertexElementFormat.Byte4_Norm, VertexElementSemantic.TextureCoordinate)
+    internal static Material CreateDefault(string internalAssetsPath, SharedProperty worldToClipMatrix)
+    {
+        var vertexPath = Path.Combine(internalAssetsPath, "default.vert");
+        var fragmentPath = Path.Combine(internalAssetsPath, "default.frag");
+
+        var vertexShader = new VertexShader<PositionColorVertex>(vertexPath);
+        var fragmentShader = new FragmentShader(fragmentPath);
+
+        var vertexPropertyLayout = new PropertyLayout(
+            new PropertySlot[] { new PropertySlot("Camera", PropertyScope.Shared) },
+            Array.Empty<PropertyDescriptor>(),
+            new SharedProperty[] { worldToClipMatrix }
         );
 
-        var vertexLayouts = new VertexLayoutDescription[]
-        {
-            vertexLayout
-        };
-
-        return new Material(vertexPath, fragmentPath, vertexLayouts);
+        return new Material(vertexShader, fragmentShader, vertexPropertyLayout, PropertyLayout.Empty);
     }
 
-    internal static Material CreateError(Game game)
+    internal static Material CreateError(string internalAssetsPath, SharedProperty worldToClipMatrix)
     {
-        var vertexPath = Path.Combine(game.InternalAssetsPath, "error.vert");
-        var fragmentPath = Path.Combine(game.InternalAssetsPath, "error.frag");
+        var vertexPath = Path.Combine(internalAssetsPath, "error.vert");
+        var fragmentPath = Path.Combine(internalAssetsPath, "error.frag");
 
-        var vertexLayout = new VertexLayoutDescription(
-            new VertexElementDescription("Position", VertexElementFormat.Float3, VertexElementSemantic.TextureCoordinate)
+        var vertexShader = new VertexShader<PositionVertex>(vertexPath);
+        var fragmentShader = new FragmentShader(fragmentPath);
+
+        var vertexPropertyLayout = new PropertyLayout(
+            new PropertySlot[] { new PropertySlot("Camera", PropertyScope.Shared) },
+            Array.Empty<PropertyDescriptor>(),
+            new SharedProperty[] { worldToClipMatrix }
         );
 
-        var vertexLayouts = new VertexLayoutDescription[]
-        {
-            vertexLayout
-        };
-
-        return new Material(vertexPath, fragmentPath, vertexLayouts);
+        return new Material(vertexShader, fragmentShader, vertexPropertyLayout, PropertyLayout.Empty);
     }
 
-    internal Pipeline GetPipeline(Framebuffer framebuffer)
+    internal Pipeline CreatePipeline(Graphics graphics, Framebuffer framebuffer)
     {
-        // check cache first
-        if (_pipelineCache.TryGetValue(framebuffer, out var pipeline)) return pipeline;
-
         var rasterizerState = new RasterizerStateDescription
         {
             CullMode = FaceCullMode.Back,
@@ -81,38 +85,74 @@ public class Material : GraphicsResource
             DepthStencilState = DepthStencilStateDescription.Disabled,
             RasterizerState = rasterizerState,
             PrimitiveTopology = PrimitiveTopology.TriangleList,
-            ResourceLayouts = Array.Empty<ResourceLayout>(),
+            ResourceLayouts = _resourceLayouts,
             ShaderSet = shaderSet,
             Outputs = framebuffer.OutputDescription
         };
 
-        var factory = Game.Current.Graphics.ResourceFactory;
-        pipeline = factory.CreateGraphicsPipeline(pipelineDescription);
-        _pipelineCache.Add(framebuffer, pipeline);
+        var factory = graphics.ResourceFactory;
+        var pipeline = factory.CreateGraphicsPipeline(pipelineDescription);
         return pipeline;
     }
 
-    protected override void OnCreate()
+    internal IEnumerable<ResourceSet> GetResourceSets()
     {
-        // load shaders
-        var vertBytes = File.ReadAllText(_vertexShaderPath);
-        var fragBytes = File.ReadAllText(_fragmentShaderPath);
-        var vertexShaderDesc = new ShaderDescription(ShaderStages.Vertex, Encoding.UTF8.GetBytes(vertBytes), "main");
-        var fragmentShaderDesc = new ShaderDescription(ShaderStages.Fragment, Encoding.UTF8.GetBytes(fragBytes), "main");
+        yield return _vertexResourceSet ?? throw new Exception("Resource set is null");
+    }
 
-        var factory = Game.Current.Graphics.ResourceFactory;
+    internal override void OnCreate(Graphics graphics)
+    {
+        base.OnCreate(graphics);
+
+        var factory = graphics.ResourceFactory;
+
+        // resource layout
+        var resourceLayoutDescription = _vertexPropertyLayout.CreateResourceLayoutDescription(ShaderStages.Vertex);
+        var vertexLayout = factory.CreateResourceLayout(resourceLayoutDescription);
+        _resourceLayouts = new ResourceLayout[] { vertexLayout };
+
+        // resource sets
+        _vertexResources = _vertexPropertyLayout.CreateResources(factory);
+        var bindableResources = _vertexResources.Select(x => x.BindableResource).ToArray();
+        var resourceSetDescription = new ResourceSetDescription(vertexLayout, bindableResources);
+        _vertexResourceSet = factory.CreateResourceSet(resourceSetDescription);
+
+        // load shaders
+        var vertBytes = _vertexShader.GetBytes();
+        var fragBytes = _fragmentShader.GetBytes();
+        var vertexShaderDesc = new ShaderDescription(ShaderStages.Vertex, vertBytes, "main");
+        var fragmentShaderDesc = new ShaderDescription(ShaderStages.Fragment, fragBytes, "main");
+
         _shaders = factory.CreateFromSpirv(vertexShaderDesc, fragmentShaderDesc);
     }
 
-    protected override void OnDestroy()
+    internal override void OnDestroy(Graphics graphics)
     {
+        base.OnDestroy(graphics);
+
+        if (_resourceLayouts != null)
+        {
+            foreach (var layout in _resourceLayouts) layout.Dispose();
+            _resourceLayouts = null;
+        }
+
+        if (_vertexResources != null)
+        {
+            foreach (var resource in _vertexResources)
+            {
+                if (resource.Scope == PropertyScope.Shared) continue;
+                resource.Dispose();
+            }
+        }
+        _vertexResources = null;
+
+        _vertexResourceSet?.Dispose();
+        _vertexResourceSet = null;
+
         if (_shaders != null)
         {
             foreach (var shader in _shaders) shader.Dispose();
             _shaders = null;
         }
-
-        foreach (var pipeline in _pipelineCache.Values) pipeline.Dispose();
-        _pipelineCache.Clear();
     }
 }

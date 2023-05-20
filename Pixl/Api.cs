@@ -1,13 +1,10 @@
-﻿using static System.Runtime.CompilerServices.RuntimeHelpers;
-
-namespace Pixl;
+﻿namespace Pixl;
 
 internal abstract class Api
 {
     public Api(IPlayer player)
     {
-        if (player is null) throw new ArgumentNullException(nameof(player));
-        Player = player;
+        Player = player ?? throw new ArgumentNullException(nameof(player));
     }
 
     public InputState Input { get; } = new();
@@ -101,33 +98,4 @@ internal abstract class Api
     /// The amount of time that passed between Updates.
     /// </summary>
     public float UpdateDelta { get; internal set; } = 0;
-
-    // ================
-    // ================  Window
-    // ================
-
-    /// <summary>
-    /// The size of the main Window
-    /// </summary>
-    public Int2 WindowSize
-    {
-        get => Player.WindowSize;
-        set => Player.WindowSize = value;
-    }
-    /// <summary>
-    /// The style of the main Window
-    /// </summary>
-    public WindowStyle WindowStyle
-    {
-        get => Player.WindowStyle;
-        set => Player.WindowStyle = value;
-    }
-    /// <summary>
-    /// The title of the main Window
-    /// </summary>
-    public string WindowTitle
-    {
-        get => Player.WindowTitle;
-        set => Player.WindowTitle = value;
-    }
 }

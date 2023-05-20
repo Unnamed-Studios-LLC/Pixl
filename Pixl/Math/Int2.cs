@@ -11,6 +11,9 @@
             Y = y;
         }
 
+        public static Int2 One = new Int2(1, 1);
+        public static Int2 Zero = new Int2(0, 0);
+
         public static bool operator ==(in Int2 a, in Int2 b) => a.Equals(in b);
         public static bool operator !=(in Int2 a, in Int2 b) => !a.Equals(in b);
 
@@ -45,5 +48,7 @@
         public bool Equals(in Int2 other) => other.X == X && other.Y == Y;
 
         public override int GetHashCode() => base.GetHashCode();
+
+        public override string ToString() => $"({X}, {Y})";
     }
 }

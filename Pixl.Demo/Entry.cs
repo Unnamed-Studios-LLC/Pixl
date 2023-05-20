@@ -1,4 +1,5 @@
 ﻿using Pixl.Demo.Systems;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Pixl.Demo
 {

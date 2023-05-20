@@ -1,6 +1,6 @@
-﻿namespace Pixl.Player.Win;
+﻿namespace Pixl.Win;
 
-internal static class KeyHelper
+public static class KeyHelper
 {
     public static KeyCode GetKeyCode(int winKeyCode)
     {

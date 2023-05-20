@@ -1,26 +1,26 @@
 ﻿namespace Pixl;
 
-internal readonly struct PlayerEvent
+internal readonly struct WindowEvent
 {
-    public readonly PlayerEventType Type;
+    public readonly WindowEventType Type;
     public readonly int ValueA;
     public readonly int ValueB;
 
-    public PlayerEvent(PlayerEventType type, int valueA, int valueB)
+    public WindowEvent(WindowEventType type, int valueA, int valueB)
     {
         Type = type;
         ValueA = valueA;
         ValueB = valueB;
     }
 
-    public PlayerEvent(PlayerEventType type, int valueA)
+    public WindowEvent(WindowEventType type, int valueA)
     {
         Type = type;
         ValueA = valueA;
         ValueB = 0;
     }
 
-    public PlayerEvent(PlayerEventType type)
+    public WindowEvent(WindowEventType type)
     {
         Type = type;
         ValueA = 0;

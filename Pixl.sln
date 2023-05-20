@@ -7,7 +7,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl", "Pixl\Pixl.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Demo", "Pixl.Demo\Pixl.Demo.csproj", "{04932DD6-9CD8-4978-A164-8349EE3DAE9B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Player.Win", "Pixl.Player.Win\Pixl.Player.Win.csproj", "{A81C049E-8554-445B-95B8-771D08119DBE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Editor", "Pixl.Editor\Pixl.Editor.csproj", "{4507C77B-25A8-4346-9AC7-F48129069FC3}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Win", "Pixl.Win\Pixl.Win.csproj", "{C289FF09-66E7-4CC5-BCCD-3910D900AAC7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Win.Editor", "Pixl.Win.Editor\Pixl.Win.Editor.csproj", "{83BCBF9E-729A-4703-9821-2929458F29CC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Win.Player", "Pixl.Win.Player\Pixl.Win.Player.csproj", "{66A6C77C-B1E7-496C-B2F3-300D7DFB6CFB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +29,22 @@ Global
 		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{04932DD6-9CD8-4978-A164-8349EE3DAE9B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A81C049E-8554-445B-95B8-771D08119DBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A81C049E-8554-445B-95B8-771D08119DBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A81C049E-8554-445B-95B8-771D08119DBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A81C049E-8554-445B-95B8-771D08119DBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4507C77B-25A8-4346-9AC7-F48129069FC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4507C77B-25A8-4346-9AC7-F48129069FC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4507C77B-25A8-4346-9AC7-F48129069FC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4507C77B-25A8-4346-9AC7-F48129069FC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C289FF09-66E7-4CC5-BCCD-3910D900AAC7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C289FF09-66E7-4CC5-BCCD-3910D900AAC7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C289FF09-66E7-4CC5-BCCD-3910D900AAC7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C289FF09-66E7-4CC5-BCCD-3910D900AAC7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{83BCBF9E-729A-4703-9821-2929458F29CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83BCBF9E-729A-4703-9821-2929458F29CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83BCBF9E-729A-4703-9821-2929458F29CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83BCBF9E-729A-4703-9821-2929458F29CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66A6C77C-B1E7-496C-B2F3-300D7DFB6CFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66A6C77C-B1E7-496C-B2F3-300D7DFB6CFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66A6C77C-B1E7-496C-B2F3-300D7DFB6CFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66A6C77C-B1E7-496C-B2F3-300D7DFB6CFB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

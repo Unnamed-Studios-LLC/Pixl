@@ -29,7 +29,7 @@ internal class SystemList
             _onLateUpdate.Sort();
         }
 
-        if (type.DoesOverride(s_baseType, nameof(ComponentSystem.OnRender), typeof(VertexRenderer<Vertex>)))
+        if (type.DoesOverride(s_baseType, nameof(ComponentSystem.OnRender), typeof(VertexRenderer)))
         {
             _onRender.Add(system);
             _onRender.Sort();
@@ -57,7 +57,7 @@ internal class SystemList
     {
         foreach (var system in _onFixedUpdate)
         {
-            InternalUtils.CallUserMethod(system.OnFixedUpdate);
+            ImplUtils.CallUserMethod(system.OnFixedUpdate);
         }
     }
 
@@ -65,7 +65,7 @@ internal class SystemList
     {
         foreach (var system in _onLateUpdate)
         {
-            InternalUtils.CallUserMethod(system.OnLateUpdate);
+            ImplUtils.CallUserMethod(system.OnLateUpdate);
         }
     }
 
@@ -101,11 +101,11 @@ internal class SystemList
         }
     }
 
-    public void Render(VertexRenderer<Vertex> renderer)
+    public void Render(VertexRenderer renderer)
     {
         foreach (var system in _onRender)
         {
-            InternalUtils.CallUserMethod(() => system.OnRender(renderer));
+            ImplUtils.CallUserMethod(() => system.OnRender(renderer));
         }
     }
 
@@ -113,7 +113,7 @@ internal class SystemList
     {
         foreach (var system in _onUpdate)
         {
-            InternalUtils.CallUserMethod(system.OnUpdate);
+            ImplUtils.CallUserMethod(system.OnUpdate);
         }
     }
 }

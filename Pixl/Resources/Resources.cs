@@ -5,14 +5,17 @@ internal sealed class Resources
     private readonly Dictionary<uint, Resource> _resources = new();
     private uint _nextResourceId = 1;
 
-    public Resources(Material defaultMaterial, Material errorMaterial)
+    public Resources(SharedProperty worldToClipMatrix, Material defaultMaterial, Material errorMaterial)
     {
+        WorldToClipMatrix = worldToClipMatrix;
         DefaultMaterial = defaultMaterial;
         ErrorMaterial = errorMaterial;
     }
 
     public IEnumerable<Resource> All => _resources.Values;
 
+    // TODO move these to a better "Default Resources" area
+    public SharedProperty WorldToClipMatrix { get; }
     public Material DefaultMaterial { get; }
     public Material ErrorMaterial { get; }
 
@@ -22,7 +25,8 @@ internal sealed class Resources
         var id = GenerateId();
         _resources.Add(id, resource);
         resource.Id = id;
-        InternalUtils.CallUserMethod(resource.OnAdd);
+        resource.Resources = this;
+        ImplUtils.CallUserMethod(resource.OnAdd);
     }
 
     public Resource Get(uint id) => _resources[id];
@@ -32,13 +36,15 @@ internal sealed class Resources
     {
         // TODO thread check
         if (!_resources.Remove(id, out var resource)) return false;
-        InternalUtils.CallUserMethod(resource.OnRemove);
+        ImplUtils.CallUserMethod(resource.OnRemove);
         resource.Id = 0;
+        resource.Resources = null;
         return true;
     }
 
     public void Start()
     {
+        Add(WorldToClipMatrix);
         Add(DefaultMaterial);
         Add(ErrorMaterial);
     }

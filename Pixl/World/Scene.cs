@@ -6,11 +6,11 @@ namespace Pixl
     public class Scene
     {
         private readonly SystemList _systems = new();
-        private readonly VertexRenderer<Vertex> _renderer;
+        private readonly VertexRenderer _renderer;
 
         public Scene()
         {
-            _renderer = new VertexRenderer<Vertex>(30_000);
+            _renderer = new VertexRenderer(20_000, 600_000);
         }
 
         public EntityDatabase Entities { get; } = new();
@@ -22,9 +22,9 @@ namespace Pixl
             system.SetScene(this);
             system.Registering = true;
             system.Removing = false;
-            InternalUtils.CallUserMethod(system.OnRegisterEvents);
+            ImplUtils.CallUserMethod(system.OnRegisterEvents);
             system.Registering = false;
-            InternalUtils.CallUserMethod(system.OnAdd);
+            ImplUtils.CallUserMethod(system.OnAdd);
         }
         public ComponentSystem AddSystem<T>() where T : ComponentSystem, new()
         {
@@ -41,10 +41,10 @@ namespace Pixl
         {
             if (system.Scene != this) return false;
             _systems.Remove(system);
-            InternalUtils.CallUserMethod(system.OnRemove);
+            ImplUtils.CallUserMethod(system.OnRemove);
             system.Registering = true;
             system.Removing = true;
-            InternalUtils.CallUserMethod(system.OnRegisterEvents);
+            ImplUtils.CallUserMethod(system.OnRegisterEvents);
             system.Registering = false;
             system.SetScene(null);
             return true;
@@ -56,17 +56,17 @@ namespace Pixl
             _systems.FixedUpdate();
         }
 
-        internal void Render(CommandList commands, Framebuffer frameBuffer)
+        internal void Render(Graphics graphics, CommandList commands, Framebuffer frameBuffer)
         {
             commands.Begin();
             commands.SetFramebuffer(frameBuffer);
             commands.ClearColorTarget(0, RgbaFloat.Black);
             commands.End();
-            Game.Current.Graphics.Submit(commands);
+            graphics.Submit(commands);
 
-            _renderer.Begin(commands, frameBuffer);
+            _renderer.Begin(graphics, commands, frameBuffer);
             _systems.Render(_renderer);
-            _renderer.EndBatch();
+            _renderer.End();
         }
 
         internal void Start(Game game)

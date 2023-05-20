@@ -1,5 +1,13 @@
 ﻿using System.Diagnostics;
-using System.Reflection;
+using System.Runtime.CompilerServices;
+using Veldrid;
+
+[assembly: InternalsVisibleTo("Pixl.Demo")]
+[assembly: InternalsVisibleTo("Pixl.Editor")]
+
+[assembly: InternalsVisibleTo("Pixl.Win")]
+[assembly: InternalsVisibleTo("Pixl.Win.Editor")]
+[assembly: InternalsVisibleTo("Pixl.Win.Player")]
 
 namespace Pixl
 {
@@ -11,27 +19,22 @@ namespace Pixl
         private long _nextFixedTime;
         private readonly ManualResetEvent _waitEvent = new(false);
 
-        public Game(IPlayer player, Assembly gameAssembly) : base(player)
+        public Game(Resources resources, Graphics graphics, IPlayer player, IGameEntry entry) : base(player)
         {
-            if (gameAssembly is null) throw new ArgumentNullException(nameof(gameAssembly));
-
-            GameAssembly = new GameAssembly(gameAssembly);
-            Resources = new Resources(
-                Material.CreateDefault(this),
-                Material.CreateError(this)
-            );
+            Resources = resources ?? throw new ArgumentNullException(nameof(resources));
+            Graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
+            Entry = entry ?? throw new ArgumentNullException(nameof(entry));
         }
 
         internal static Game Current => s_games.First(); // TODO thread matching
 
         public string InternalAssetsPath => Player.InternalAssetsPath;
 
-        public GameAssembly GameAssembly { get; }
-        public Graphics Graphics { get; } = new();
+        public IGameEntry Entry { get; }
+        public Graphics Graphics { get; }
         public Resources Resources { get; }
         public Scene Scene { get; } = new();
-
-        public void ForceRender() => Render();
+        public RenderTexture? TargetRenderTexture { get; set; }
 
         public bool Run()
         {
@@ -49,16 +52,19 @@ namespace Pixl
 
             _startTime = Stopwatch.GetTimestamp();
             Resources.Start();
-            Graphics.Start(Resources, Player);
             Scene.Start(this);
-            GameAssembly.Entry.OnStart(Scene);
+            Entry.OnStart(Scene);
         }
 
         public void Stop()
         {
-            Graphics.Stop(Resources);
-
             Remove(this);
+        }
+
+        public void SwitchGraphicsApi(GraphicsApi graphicsApi)
+        {
+            Graphics.Stop(Resources);
+            Graphics.Start(Resources, Player.Window, graphicsApi);
         }
 
         public void WaitForNextUpdate()
@@ -117,17 +123,17 @@ namespace Pixl
             }
         }
 
-        private bool ProcessEvent(ref PlayerEvent @event)
+        private bool ProcessEvent(ref WindowEvent @event)
         {
             switch (@event.Type)
             {
-                case PlayerEventType.KeyDown:
+                case WindowEventType.KeyDown:
                     Input.OnKeyDown((KeyCode)@event.ValueA, Time);
                     break;
-                case PlayerEventType.KeyUp:
+                case WindowEventType.KeyUp:
                     Input.OnKeyUp((KeyCode)@event.ValueA, Time);
                     break;
-                case PlayerEventType.Quit:
+                case WindowEventType.Quit:
                     return false;
             }
             return true;
@@ -135,7 +141,7 @@ namespace Pixl
 
         private bool ProcessEvents()
         {
-            var events = Player.DequeueEvents();
+            var events = Player.Window.DequeueEvents();
             foreach (ref var @event in events)
             {
                 if (!ProcessEvent(ref @event)) return false;
@@ -148,14 +154,11 @@ namespace Pixl
             if (!Graphics.Setup) return;
 
             // sync size
-            Graphics.UpdateWindowSize(Player.WindowSize);
+            Graphics.UpdateWindowSize(Player.Window.Size);
 
             var commands = Graphics.Commands;
-            var frameBuffer = Graphics.FrameBuffer;
-
-            Scene.Render(commands, frameBuffer);
-            Graphics.Submit(commands);
-            Graphics.SwapBuffers();
+            var frameBuffer = TargetRenderTexture?.Framebuffer ?? Graphics.SwapchainFramebuffer;
+            Scene.Render(Graphics, commands, frameBuffer);
         }
 
         private void Update() => Scene.Update();

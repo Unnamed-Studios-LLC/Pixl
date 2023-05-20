@@ -3,35 +3,37 @@ using Veldrid;
 
 namespace Pixl;
 
-internal sealed class VertexRenderer<TVertex> : GraphicsResource where TVertex : unmanaged
+internal sealed class VertexRenderer : GraphicsResource
 {
+    private Graphics? _graphics;
     private CommandList? _commandList;
     private Framebuffer? _frameBuffer;
     private Material? _material;
 
-    private readonly uint[] _indexBuffer;
-    private readonly TVertex[] _vertexBuffer;
+    private readonly ushort[] _indexBuffer;
+    private readonly byte[] _vertexBuffer;
     private DeviceBuffer? _deviceIndexBuffer;
     private DeviceBuffer? _deviceVertexBuffer;
-    private uint _indexCount;
-    private uint _vertexCount;
+    private ushort _indexCount;
+    private ushort _vertexCount;
+    private uint _stride;
 
-    public VertexRenderer(int batchSize)
+    public VertexRenderer(int indexBatchSize, int vertexBatchByteSize)
     {
-        _indexBuffer = new uint[batchSize * 3];
-        _vertexBuffer = new TVertex[batchSize * 3];
+        _indexBuffer = new ushort[indexBatchSize * 3];
+        _vertexBuffer = new byte[vertexBatchByteSize];
     }
 
-    public void Begin(CommandList commandList, Framebuffer frameBuffer)
+    public void Begin(Graphics graphics, CommandList commandList, Framebuffer frameBuffer)
     {
+        _graphics = graphics;
         _commandList = commandList ?? throw new ArgumentNullException(nameof(commandList));
         _frameBuffer = frameBuffer ?? throw new ArgumentNullException(nameof(frameBuffer));
     }
 
     public void BeginBatch(uint materialId)
     {
-        if (_commandList == null) throw BeginNotCalledException();
-
+        if (_graphics == null) throw BeginNotCalledException();
         if (_material?.Id == materialId) return;
 
         // material changed
@@ -40,87 +42,13 @@ internal sealed class VertexRenderer<TVertex> : GraphicsResource where TVertex :
         {
             EndBatch();
             _material = material;
+            _stride = material.VertexStride;
         }
-    }
-
-    public void EndBatch()
-    {
-        if (_indexCount == 0) return;
-        if (_commandList == null || _frameBuffer == null) throw BeginNotCalledException();
-        if (_material == null) throw new Exception("Render material is null");
-
-        var (indexCount, vertexCount) = ConsumeCounts();
-
-        var device = Game.Current.Graphics.Device;
-        device.UpdateBuffer(_deviceIndexBuffer, 0, _indexBuffer.AsSpan(0, (int)indexCount));
-        device.UpdateBuffer(_deviceVertexBuffer, 0, _vertexBuffer.AsSpan(0, (int)vertexCount));
-
-        _commandList.Begin();
-        _commandList.SetFramebuffer(_frameBuffer);
-        _commandList.SetIndexBuffer(_deviceIndexBuffer, IndexFormat.UInt32);
-        _commandList.SetVertexBuffer(0, _deviceVertexBuffer);
-        _commandList.SetPipeline(_material.GetPipeline(_frameBuffer));
-        _commandList.DrawIndexed(indexCount);
-        _commandList.End();
-
-        device.WaitForIdle();
-        device.SubmitCommands(_commandList);
-    }
-
-    public unsafe void RenderQuad(in TVertex a, in TVertex b, in TVertex c, in TVertex d)
-    {
-        if (_commandList == null) throw BeginNotCalledException();
-        if (!MakeSpace(6)) throw OutOfSpaceException();
-
-        fixed (uint* indexPtr = &_indexBuffer[_indexCount])
-        fixed (TVertex* vertexPtr = &_vertexBuffer[_vertexCount])
-        {
-            var index = indexPtr;
-            var vertex = vertexPtr;
-
-            *vertex++ = a;
-            *vertex++ = b;
-            *vertex++ = c;
-            *vertex++ = d;
-
-            *index++ = _vertexCount + 0;
-            *index++ = _vertexCount + 1;
-            *index++ = _vertexCount + 2;
-            *index++ = _vertexCount + 0;
-            *index++ = _vertexCount + 2;
-            *index++ = _vertexCount + 3;
-        }
-
-        _vertexCount += 4;
-        _indexCount += 6;
-    }
-
-    public unsafe void RenderTriangle(in TVertex a, in TVertex b, in TVertex c)
-    {
-        if (_commandList == null) throw BeginNotCalledException();
-        if (!MakeSpace(3)) throw OutOfSpaceException();
-
-        fixed (uint* indexPtr = &_indexBuffer[_indexCount])
-        fixed (TVertex* vertexPtr = &_vertexBuffer[_vertexCount])
-        {
-            var index = indexPtr;
-            var vertex = vertexPtr;
-
-            *vertex++ = a;
-            *index++ = _vertexCount++;
-            *vertex++ = b;
-            *index++ = _vertexCount++;
-            *vertex++ = c;
-            *index++ = _vertexCount++;
-        }
-
-        _vertexCount += 3;
-        _indexCount += 3;
     }
 
     public void ClearDepth()
     {
-        if (_commandList == null || _frameBuffer == null) throw BeginNotCalledException();
+        if (_graphics == null || _commandList == null || _frameBuffer == null) throw BeginNotCalledException();
         EndBatch();
 
         _commandList.Begin();
@@ -128,25 +56,115 @@ internal sealed class VertexRenderer<TVertex> : GraphicsResource where TVertex :
         _commandList.ClearDepthStencil(0);
         _commandList.End();
 
-        var device = Game.Current.Graphics.Device;
+        _graphics.Submit(_commandList);
+    }
+
+    public void End()
+    {
+        EndBatch();
+    }
+
+    public void EndBatch()
+    {
+        if (_indexCount == 0) return;
+        if (_graphics == null || _commandList == null || _frameBuffer == null) throw BeginNotCalledException();
+        if (_material == null) throw new Exception("Render material is null");
+
+        var (indexCount, vertexCount) = ConsumeCounts();
+        var vertexSize = vertexCount * _stride;
+
+        _commandList.Begin();
+        _commandList.SetFramebuffer(_frameBuffer);
+        _commandList.SetIndexBuffer(_deviceIndexBuffer, IndexFormat.UInt16);
+        _commandList.SetVertexBuffer(0, _deviceVertexBuffer);
+        _commandList.SetPipeline(_material.CreatePipeline(_graphics, _frameBuffer));
+
+        uint slot = 0;
+        foreach (var resourceSet in _material.GetResourceSets())
+        {
+            _commandList.SetGraphicsResourceSet(slot++, resourceSet);
+        }
+
+        _commandList.DrawIndexed(indexCount);
+        _commandList.End();
+
+        var resources = Game.Current.Resources;
+        var device = _graphics.Device;
+        device.WaitForIdle();
+        device.UpdateBuffer(_deviceIndexBuffer, 0, _indexBuffer.AsSpan(0, (int)indexCount));
+        device.UpdateBuffer(_deviceVertexBuffer, 0, _vertexBuffer.AsSpan(0, (int)vertexSize));
         device.SubmitCommands(_commandList);
     }
 
-    protected override void OnCreate()
+    public unsafe void RenderQuad<TVertex>(in TVertex a, in TVertex b, in TVertex c, in TVertex d) where TVertex : unmanaged
     {
-        base.OnCreate();
+        if (_commandList == null) throw BeginNotCalledException();
+        if (_material == null) throw BeginBatchNotCalledException();
+        if (!MakeSpace(6, 4, sizeof(TVertex))) throw OutOfSpaceException();
 
-        var indexBufferDescription = new BufferDescription((uint)(_indexBuffer.Length * Marshal.SizeOf<uint>()), BufferUsage.IndexBuffer);
-        var vertexBufferDescription = new BufferDescription((uint)(_vertexBuffer.Length * Marshal.SizeOf<TVertex>()), BufferUsage.VertexBuffer);
+        fixed (ushort* indexPtr = &_indexBuffer[_indexCount])
+        fixed (byte* vertexPtr = &_vertexBuffer[_vertexCount * _stride])
+        {
+            var index = indexPtr;
+            var vertex = vertexPtr;
 
-        var factory = Game.Current.Graphics.ResourceFactory;
+            *(TVertex*)(vertex + _stride * 0) = a;
+            *(TVertex*)(vertex + _stride * 1) = b;
+            *(TVertex*)(vertex + _stride * 2) = c;
+            *(TVertex*)(vertex + _stride * 3) = d;
+
+            *index++ = (ushort)(_vertexCount + 0);
+            *index++ = (ushort)(_vertexCount + 1);
+            *index++ = (ushort)(_vertexCount + 2);
+            *index++ = (ushort)(_vertexCount + 0);
+            *index++ = (ushort)(_vertexCount + 2);
+            *index++ = (ushort)(_vertexCount + 3);
+        }
+
+        _vertexCount += 4;
+        _indexCount += 6;
+    }
+
+    public unsafe void RenderTriangle<TVertex>(in TVertex a, in TVertex b, in TVertex c) where TVertex : unmanaged
+    {
+        if (_commandList == null) throw BeginNotCalledException();
+        if (_material == null) throw BeginBatchNotCalledException();
+        if (!MakeSpace(3, 3, sizeof(TVertex))) throw OutOfSpaceException();
+
+        fixed (ushort* indexPtr = &_indexBuffer[_indexCount])
+        fixed (byte* vertexPtr = &_vertexBuffer[_vertexCount])
+        {
+            var index = indexPtr;
+            var vertex = vertexPtr;
+
+            *(TVertex*)(vertex + _stride * 0) = a;
+            *(TVertex*)(vertex + _stride * 1) = b;
+            *(TVertex*)(vertex + _stride * 2) = c;
+
+            *index++ = _vertexCount++;
+            *index++ = _vertexCount++;
+            *index++ = _vertexCount++;
+        }
+
+        _vertexCount += 3;
+        _indexCount += 3;
+    }
+
+    internal override void OnCreate(Graphics graphics)
+    {
+        base.OnCreate(graphics);
+
+        var indexBufferDescription = new BufferDescription((uint)(_indexBuffer.Length * Marshal.SizeOf<ushort>()), BufferUsage.IndexBuffer | BufferUsage.Dynamic);
+        var vertexBufferDescription = new BufferDescription((uint)_vertexBuffer.Length, BufferUsage.VertexBuffer | BufferUsage.Dynamic);
+
+        var factory = graphics.ResourceFactory;
         _deviceIndexBuffer = factory.CreateBuffer(indexBufferDescription);
         _deviceVertexBuffer = factory.CreateBuffer(vertexBufferDescription);
     }
 
-    protected override void OnDestroy()
+    internal override void OnDestroy(Graphics graphics)
     {
-        base.OnDestroy();
+        base.OnDestroy(graphics);
 
         _deviceIndexBuffer?.Dispose();
         _deviceIndexBuffer = null;
@@ -155,7 +173,8 @@ internal sealed class VertexRenderer<TVertex> : GraphicsResource where TVertex :
         _deviceVertexBuffer = null;
     }
 
-    private static Exception BeginNotCalledException() => new($"{nameof(VertexRenderer<TVertex>)}.{nameof(Begin)} must be called before Rendering.");
+    private static Exception BeginNotCalledException() => new($"{nameof(VertexRenderer)}.{nameof(Begin)} must be called before Rendering.");
+    private static Exception BeginBatchNotCalledException() => new($"{nameof(VertexRenderer)}.{nameof(BeginBatch)} must be called before Rendering.");
 
     private static Material FetchMaterial(uint id)
     {
@@ -176,10 +195,17 @@ internal sealed class VertexRenderer<TVertex> : GraphicsResource where TVertex :
         return counts;
     }
 
-    private bool MakeSpace(int indexCount)
+    private bool HasSpace(int indexCount, int vertexCount, int vertexSize)
     {
-        if (_indexCount + indexCount < _indexBuffer.Length) return true;
+        var vertexOverflow = (uint)Math.Max(0, vertexSize - _stride);
+        return _indexCount + indexCount < _indexBuffer.Length &&
+            (_vertexCount + vertexCount) * _stride + vertexOverflow < _vertexBuffer.Length;
+    }
+
+    private bool MakeSpace(int indexCount, int vertexCount, int vertexSize)
+    {
+        if (HasSpace(indexCount, vertexCount, vertexSize)) return true;
         EndBatch();
-        return _indexCount + indexCount < _indexBuffer.Length;
+        return HasSpace(indexCount, vertexCount, vertexSize);
     }
 }

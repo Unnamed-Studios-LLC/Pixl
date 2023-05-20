@@ -1,4 +1,5 @@
 ﻿using Veldrid;
+using Veldrid.OpenGL;
 
 namespace Pixl;
 
@@ -7,15 +8,17 @@ internal sealed class Graphics
     private GraphicsDevice? _device;
     private CommandList? _mainCommands;
     private ResourceFactory? _resourceFactory;
+    private GraphicsApi _api;
 
+    public GraphicsApi Api => _device != null ? _api : throw SetupException();
     public CommandList Commands => _mainCommands ?? throw SetupException();
     public GraphicsDevice Device => _device ?? throw SetupException();
-    public Framebuffer FrameBuffer => _device?.SwapchainFramebuffer ?? throw SetupException();
     public ResourceFactory ResourceFactory => _resourceFactory ?? throw SetupException();
+    public Framebuffer SwapchainFramebuffer => _device?.SwapchainFramebuffer ?? throw SetupException();
 
     public bool Setup => _mainCommands != null;
 
-    public void Start(Resources resources, IPlayer player)
+    public void Start(Resources resources, AppWindow window, GraphicsApi graphicsApi)
     {
         var options = new GraphicsDeviceOptions
         {
@@ -29,7 +32,7 @@ internal sealed class Graphics
             SyncToVerticalBlank = false
         };
 
-        var size = player.WindowSize;
+        var size = window.Size;
         var swapchain = new SwapchainDescription
         {
             DepthFormat = PixelFormat.R32_Float,
@@ -37,19 +40,19 @@ internal sealed class Graphics
             ColorSrgb = false,
             Width = (uint)size.X,
             Height = (uint)size.Y,
-            Source = player.SwapchainSource
+            Source = window.SwapchainSource
         };
 
-        var api = player.GraphicsApi;
-        _device = api switch
+        _device = graphicsApi switch
         {
             GraphicsApi.DirectX => CreateDirectXGraphicsDevice(in options, in swapchain),
             GraphicsApi.OpenGlEs => CreateOpenGlEsGraphicsDevice(in options, in swapchain),
-            //GraphicsApi.OpenGl => CreateOpenGlGraphicsDevice(in options, in swapchain), TODO
+            //GraphicsApi.OpenGl => CreateOpenGlGraphicsDevice(in options, in swapchain),
             GraphicsApi.Metal => CreateMetalGraphicsDevice(in options, in swapchain),
             GraphicsApi.Vulkan => CreateVulkanGraphicsDevice(in options, in swapchain),
-            _ => throw new Exception($"Unable to create graphics device for {api}")
+            _ => throw new Exception($"Unable to create graphics device for {graphicsApi}")
         };
+        _api = graphicsApi;
 
         // create device resources
         _resourceFactory = _device.ResourceFactory;

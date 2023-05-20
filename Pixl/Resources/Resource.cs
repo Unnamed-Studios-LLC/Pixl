@@ -2,29 +2,30 @@
 
 public abstract class Resource : IDisposable
 {
-    private bool _disposedValue;
+    private bool _disposed;
 
     public uint Id { get; internal set; }
 
+    internal Resources? Resources { get; set; }
+
+    ~Resource() => DoDispose();
+
     public void Dispose()
     {
-        Dispose(disposing: true);
+        DoDispose();
         GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposedValue)
-        {
-            if (disposing)
-            {
-                Game.Current.Resources.Remove(this);
-            }
-
-            _disposedValue = true;
-        }
     }
 
     internal virtual void OnAdd() { }
     internal virtual void OnRemove() { }
+
+    private void DoDispose()
+    {
+        if (_disposed) return;
+
+        Resources?.Remove(this);
+        Resources = null;
+
+        _disposed = true;
+    }
 }

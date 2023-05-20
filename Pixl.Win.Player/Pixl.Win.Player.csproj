@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+    
+  <ItemGroup>
+    <TrimmerRootAssembly Include="Pixl.Demo" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Veldrid" Version="4.9.0" />
+    <PackageReference Include="WinApi" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Pixl.Demo\Pixl.Demo.csproj" />
+    <ProjectReference Include="..\Pixl.Win\Pixl.Win.csproj" />
+    <ProjectReference Include="..\Pixl\Pixl.csproj" />
+  </ItemGroup>
+
+</Project>

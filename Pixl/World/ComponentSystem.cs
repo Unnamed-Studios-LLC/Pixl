@@ -43,7 +43,7 @@ namespace Pixl
         public virtual void OnRegisterEvents() { }
         public virtual void OnUpdate() { }
 
-        internal virtual void OnRender(VertexRenderer<Vertex> renderer) { }
+        internal virtual void OnRender(VertexRenderer renderer) { }
 
         internal void SetScene(Scene? scene)
         {

@@ -1,7 +1,7 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="UnnamedStudios.EntitiesDb" Version="1.0.1" />
+    <PackageReference Include="UnnamedStudios.EntitiesDb" Version="1.0.2" />
     <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" PrivateAssets="compile" />
   </ItemGroup>
