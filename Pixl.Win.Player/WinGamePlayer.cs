@@ -1,4 +1,7 @@
-﻿namespace Pixl.Win.Player;
+﻿using System;
+using System.IO;
+
+namespace Pixl.Win.Player;
 
 internal sealed class WinGamePlayer : IPlayer
 {

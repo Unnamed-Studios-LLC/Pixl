@@ -5,15 +5,16 @@ namespace Pixl;
 public readonly struct PropertyDescriptor
 {
     public readonly PropertyType Type;
-    public readonly uint SizeInBytes;
+    public readonly int SizeInBytes;
 
-    public PropertyDescriptor(PropertyType type, uint sizeInBytes)
+    public PropertyDescriptor(PropertyType type, int sizeInBytes)
     {
         Type = type;
         SizeInBytes = sizeInBytes;
     }
 
-    public static PropertyDescriptor CreateCustom(uint sizeInBytes) => new(PropertyType.Custom, sizeInBytes);
+    public static unsafe PropertyDescriptor CreateCustom<T>() where T : unmanaged => new(PropertyType.Custom, sizeof(T));
+    public static PropertyDescriptor CreateCustom(int sizeInBytes) => new(PropertyType.Custom, sizeInBytes);
 
     public static PropertyDescriptor CreateStandard(PropertyType type)
     {
@@ -25,9 +26,5 @@ public readonly struct PropertyDescriptor
         };
     }
 
-    internal BindableResource CreateBindableResource(ResourceFactory factory)
-    {
-        var bufferDescription = new BufferDescription(SizeInBytes, BufferUsage.UniformBuffer);
-        return factory.CreateBuffer(bufferDescription);
-    }
+    public static PropertyDescriptor CreateTexture2d() => new(PropertyType.Texture2d, 0);
 }

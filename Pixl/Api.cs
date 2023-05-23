@@ -2,6 +2,8 @@
 
 internal abstract class Api
 {
+    private int? _mainThreadId;
+
     public Api(IPlayer player)
     {
         Player = player ?? throw new ArgumentNullException(nameof(player));
@@ -23,6 +25,14 @@ internal abstract class Api
     /// The path pointing to a directory where application data may be read and written.
     /// </summary>
     public string DataPath => Player.DataPath;
+    /// <summary>
+    /// Id of the Thread running the main game loop
+    /// </summary>
+    public int MainThreadId
+    {
+        get => _mainThreadId ?? throw new Exception($"{nameof(MainThreadId)} has not been initialized!");
+        protected set => _mainThreadId = value;
+    }
 
     // ================
     // ================  Debug

@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
@@ -28,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" PrivateAssets="compile" />
     <PackageReference Include="UnnamedStudios.EntitiesDb" Version="1.0.2" />
     <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" PrivateAssets="compile" />

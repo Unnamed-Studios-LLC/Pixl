@@ -2,21 +2,15 @@
 using Pixl.Demo;
 using Pixl.Win;
 using Pixl.Win.Player;
+using System;
+using System.IO;
+using System.Threading;
 
 try
 {
     WinWindow window = new("Pixl Game", new Int2(1000, 800));
     WinGamePlayer player = new(window);
-
-    var worldToClipMatrix = SharedProperty.Create(PropertyDescriptor.CreateStandard(PropertyType.Mat4));
-    var defaultMaterial = Material.CreateDefault(player.InternalAssetsPath, worldToClipMatrix);
-    var errorMaterial = Material.CreateError(player.InternalAssetsPath, worldToClipMatrix);
-
-    Resources resources = new(
-        worldToClipMatrix,
-        defaultMaterial,
-        errorMaterial
-    );
+    Resources resources = new();
 
     var graphics = new Graphics();
     graphics.Start(resources, window, GraphicsApi.DirectX);

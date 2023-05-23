@@ -1,4 +1,9 @@
-﻿using System.Diagnostics;
+﻿global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.IO;
+
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]

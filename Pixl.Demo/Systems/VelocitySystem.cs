@@ -1,18 +1,17 @@
 ﻿using EntitiesDb;
 using Pixl.Demo.Components;
-using static System.Formats.Asn1.AsnWriter;
-using System.Numerics;
 
 namespace Pixl.Demo.Systems
 {
     internal sealed class VelocitySystem : ComponentSystem
     {
-        private uint _cameraEntityId;
+        public uint CameraEntityId;
         private readonly EntityLayout _cameraLayout;
         private readonly EntityLayout _canvasLayout;
         private readonly EntityLayout _entityLayout;
         private readonly EntityLayout _uiLayout;
-        private int _entityCount = 0;
+        private readonly List<uint> _entityIds = new();
+        private readonly Texture2d _charactersTexture;
 
         private int _fps;
 
@@ -37,32 +36,68 @@ namespace Pixl.Demo.Systems
                 .Add<CanvasTransform>()
                 .Add<Sprite>()
                 .Build();
+
+            var fileStream = File.OpenRead("Assets/characters.png");
+            _charactersTexture = Texture2d.CreateFromFile(fileStream, SampleMode.Point, ColorFormat.Rgba32);
         }
+
+        public float SpeedScalar = 1;
+
+        public void CreateEntities(int count)
+        {
+            var rnd = new Random();
+            for (int i = 0; i < count; i++)
+            {
+                var heading = (float)rnd.NextDouble() * MathF.PI * 2;
+                var speed = (float)rnd.NextDouble() * 5;
+                var vector = new Vec2(MathF.Sin(heading), MathF.Cos(heading)) * speed;
+                var position = new Vec2(-100 + (float)rnd.NextDouble() * 200, -100 + (float)rnd.NextDouble() * 200);
+                Vec2 scale = (0.5f + (float)rnd.NextDouble()) * 0.05f;
+                var color = new Color32((byte)rnd.Next(0, 256), (byte)rnd.Next(0, 256), (byte)rnd.Next(0, 256), 255);
+
+                _entityLayout.Set(new Transform(position, Vec3.Zero, scale));
+                _entityLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 8, 8), color));
+                _entityLayout.Set(new Velocity(vector));
+                var entityId = Scene.Entities.CreateEntity(_entityLayout);
+                _entityIds.Add(entityId);
+            }
+            UpdateTitle();
+        }
+
+        public void RemoveEntities(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (_entityIds.Count == 0) break;
+                var id = _entityIds[^1];
+                Scene.Entities.DestroyEntity(id);
+                _entityIds.RemoveAt(_entityIds.Count - 1);
+            }
+            UpdateTitle();
+        }
+
         public override void OnAdd()
         {
             // create camera
             _cameraLayout.Set(new Transform(new Vec3(0, 0, 10), new Vec3(0, 0, 0), Vec3.One));
             _cameraLayout.Set(new Camera());
-            _cameraEntityId = Scene.Entities.CreateEntity(_cameraLayout);
+            CameraEntityId = Scene.Entities.CreateEntity(_cameraLayout);
 
             // create canvas
             _canvasLayout.Set(new Canvas(new Vec2(1, 1)));
             Scene.Entities.CreateEntity(_canvasLayout);
 
-            // create entities
-            CreateEntities(30_000);
-
             // create ui
             _uiLayout.Set(new CanvasTransform(new Vec2(10, 10), Vec3.Zero, Vec2.One, new Vec2(100, 100), Vec2.Zero, Vec2.Zero, 0));
-            _uiLayout.Set(new Sprite(0, new RectInt(0, 0, 20, 20)));
+            _uiLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 32, 32), Color32.White));
             Scene.Entities.CreateEntity(_uiLayout);
 
             _uiLayout.Set(new CanvasTransform(new Vec2(120, 10), Vec3.Zero, Vec2.One, new Vec2(20, 20), Vec2.Zero, Vec2.Zero, 0));
-            _uiLayout.Set(new Sprite(0, new RectInt(0, 0, 20, 20)));
+            _uiLayout.Set(new Sprite(0, new RectInt(0, 0, 32, 32), Color32.White));
             Scene.Entities.CreateEntity(_uiLayout);
 
             _uiLayout.Set(new CanvasTransform(new Vec2(10, 120), Vec3.Zero, Vec2.One, new Vec2(40, 20), Vec2.Zero, Vec2.Zero, 0));
-            _uiLayout.Set(new Sprite(0, new RectInt(0, 0, 20, 20)));
+            _uiLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 32, 32), Color32.White));
             Scene.Entities.CreateEntity(_uiLayout);
         }
 
@@ -72,7 +107,7 @@ namespace Pixl.Demo.Systems
             Scene.Entities.ParallelForEach((ref Velocity velocity) =>
             {
                 var timeStep = total - velocity.Time;
-                velocity.Position += velocity.Vector * timeStep;
+                velocity.Position += velocity.Vector * timeStep * SpeedScalar;
                 velocity.Time = total;
             });
         }
@@ -82,71 +117,16 @@ namespace Pixl.Demo.Systems
             RegisterEvent<Velocity>(Event.OnAdd, OnAdd);
         }
 
-        public override void OnUpdate()
+        public override void OnLateUpdate()
         {
             if (Scene == null) return;
-            if (_cameraEntityId != 0)
-            {
-                ref var cameraTransform = ref Scene.Entities.GetComponent<Transform>(_cameraEntityId);
-                var moveSpeed = 20 * Time.UpdateDelta;
-                if (Input.GetKey(KeyCode.A))
-                {
-                    cameraTransform.Position.X -= moveSpeed;
-                }
-                if (Input.GetKey(KeyCode.D))
-                {
-                    cameraTransform.Position.X += moveSpeed;
-                }
-                if (Input.GetKey(KeyCode.S))
-                {
-                    cameraTransform.Position.Y -= moveSpeed;
-                }
-                if (Input.GetKey(KeyCode.W))
-                {
-                    cameraTransform.Position.Y += moveSpeed;
-                }
-
-                if (Input.GetKey(KeyCode.Q))
-                {
-                    cameraTransform.Scale *= 1.2f;
-                }
-                if (Input.GetKey(KeyCode.E))
-                {
-                    cameraTransform.Scale /= 1.2f;
-                }
-
-                var rotateSpeed = 180 * Time.UpdateDelta;
-                if (Input.GetKey(KeyCode.C))
-                {
-                    cameraTransform.Rotation.Z += rotateSpeed;
-                }
-                if (Input.GetKey(KeyCode.V))
-                {
-                    cameraTransform.Rotation.Z -= rotateSpeed;
-                }
-
-                if (Input.GetKey(KeyCode.R))
-                {
-                    cameraTransform.Position = Vec3.Zero;
-                }
-
-                if (Input.GetKeyDown(KeyCode.M))
-                {
-                    CreateEntities(10_000);
-                }
-
-                if (Input.GetKeyDown(KeyCode.G))
-                {
-                    Application.GraphicsApi = Application.GraphicsApi == GraphicsApi.DirectX ? GraphicsApi.Vulkan : GraphicsApi.DirectX;
-                }
-            }
 
             var total = Time.Total;
             var delta = Time.UpdateDelta;
             Scene.Entities.ParallelForEach((ref Transform transform, ref Velocity velocity) =>
             {
                 var timeStep = total - velocity.Time;
-                transform.Position = velocity.Position + velocity.Vector * timeStep;
+                transform.Position = velocity.Position + velocity.Vector * timeStep * SpeedScalar;
                 if (velocity.Vector.X > 0 && transform.Position.X > 100) velocity.Vector.X *= -1;
                 if (velocity.Vector.X < 0 && transform.Position.X < -100) velocity.Vector.X *= -1;
                 if (velocity.Vector.Y > 0 && transform.Position.Y > 100) velocity.Vector.Y *= -1;
@@ -159,26 +139,6 @@ namespace Pixl.Demo.Systems
                 _fps = fps;
                 UpdateTitle();
             }
-        }
-
-        private void CreateEntities(int count)
-        {
-            var rnd = new Random();
-            for (int i = 0; i < count; i++)
-            {
-                var heading = (float)rnd.NextDouble() * MathF.PI * 2;
-                var speed = (float)rnd.NextDouble() * 5;
-                var vector = new Vec2(MathF.Sin(heading), MathF.Cos(heading)) * speed;
-                var position = new Vec2(-100 + (float)rnd.NextDouble() * 200, -100 + (float)rnd.NextDouble() * 200);
-                Vec2 scale = (0.5f + (float)rnd.NextDouble()) * 0.3f;
-
-                _entityLayout.Set(new Transform(position, Vec3.Zero, scale));
-                _entityLayout.Set(new Sprite(0, new RectInt(0, 0, 1, 1)));
-                _entityLayout.Set(new Velocity(vector));
-                Scene.Entities.CreateEntity(_entityLayout);
-            }
-            _entityCount += count;
-            UpdateTitle();
         }
 
         private void OnAdd(uint entityId, ref Velocity velocity)

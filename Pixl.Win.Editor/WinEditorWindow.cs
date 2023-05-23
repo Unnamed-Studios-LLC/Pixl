@@ -1,4 +1,6 @@
-﻿namespace Pixl.Win.Editor;
+﻿using System;
+
+namespace Pixl.Win.Editor;
 
 internal sealed class WinEditorWindow : WinWindow
 {

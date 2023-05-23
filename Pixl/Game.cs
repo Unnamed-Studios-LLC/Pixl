@@ -1,6 +1,11 @@
-﻿using System.Diagnostics;
+﻿global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.IO;
+
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Veldrid;
+using System.Threading;
 
 [assembly: InternalsVisibleTo("Pixl.Demo")]
 [assembly: InternalsVisibleTo("Pixl.Editor")]
@@ -24,12 +29,15 @@ namespace Pixl
             Resources = resources ?? throw new ArgumentNullException(nameof(resources));
             Graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
             Entry = entry ?? throw new ArgumentNullException(nameof(entry));
+
+            DefaultResources = CreateDefaultResources();
         }
 
         internal static Game Current => s_games.First(); // TODO thread matching
 
         public string InternalAssetsPath => Player.InternalAssetsPath;
 
+        public DefaultResources DefaultResources { get; }
         public IGameEntry Entry { get; }
         public Graphics Graphics { get; }
         public Resources Resources { get; }
@@ -48,10 +56,11 @@ namespace Pixl
 
         public void Start()
         {
+            MainThreadId = Environment.CurrentManagedThreadId;
             Add(this);
+            DefaultResources.Add(Resources);
 
             _startTime = Stopwatch.GetTimestamp();
-            Resources.Start();
             Scene.Start(this);
             Entry.OnStart(Scene);
         }
@@ -100,6 +109,15 @@ namespace Pixl
         }
 
         internal string GetInternalAssetPath(string localPath) => Path.Combine(Player.InternalAssetsPath, localPath);
+
+        private DefaultResources CreateDefaultResources()
+        {
+            var worldToClipMatrix = new Property("WorldToClipMatrix", PropertyScope.Shared, PropertyDescriptor.CreateStandard(PropertyType.Mat4));
+            var defaultMaterial = Material.CreateDefault(InternalAssetsPath, worldToClipMatrix);
+            var errorMaterial = Material.CreateError(InternalAssetsPath, worldToClipMatrix);
+
+            return new DefaultResources(worldToClipMatrix, defaultMaterial, errorMaterial);
+        }
 
         private long GetTicksUntilNextUpdate()
         {

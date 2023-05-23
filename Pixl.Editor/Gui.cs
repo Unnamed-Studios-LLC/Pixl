@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using System;
 using System.Numerics;
 using Veldrid;
 using Vulkan;
@@ -14,10 +15,10 @@ internal sealed class Gui : GraphicsResource
     private DeviceBuffer? _vertexBuffer;
     private DeviceBuffer? _indexBuffer;
 
-    public Gui(AppWindow window, Material guiMaterial)
+    public Gui(AppWindow window, Material material)
     {
         Window = window;
-        _material = guiMaterial;
+        _material = material;
     }
 
     public AppWindow Window { get; }
@@ -37,8 +38,9 @@ internal sealed class Gui : GraphicsResource
         commands.SetIndexBuffer(_indexBuffer, IndexFormat.UInt16);
         commands.SetVertexBuffer(0, _vertexBuffer);
         commands.SetPipeline(_material.CreatePipeline(graphics, frameBuffer));
+
         uint slot = 0;
-        foreach (var resourceSet in _material.GetResourceSets())
+        foreach (var resourceSet in _material.CreateResourceSets(graphics))
         {
             commands.SetGraphicsResourceSet(slot++, resourceSet);
         }

@@ -1,4 +1,7 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Veldrid;
 
@@ -15,7 +18,7 @@ namespace Pixl
             [typeof(Int2)] = VertexElementFormat.Int2,
             [typeof(Int3)] = VertexElementFormat.Int3,
             [typeof(Int4)] = VertexElementFormat.Int4,
-            [typeof(Color)] = VertexElementFormat.Byte4_Norm,
+            [typeof(Color32)] = VertexElementFormat.Byte4_Norm,
         };
 
         public static bool HasEmptyConstructor(this Type type)

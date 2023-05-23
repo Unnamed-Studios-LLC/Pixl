@@ -1,4 +1,8 @@
-﻿namespace Pixl;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Pixl;
 
 internal class SystemList
 {

@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 using Veldrid;
 
 namespace Pixl;
@@ -9,6 +10,7 @@ internal sealed class VertexRenderer : GraphicsResource
     private CommandList? _commandList;
     private Framebuffer? _frameBuffer;
     private Material? _material;
+    private Texture2d? _texture;
 
     private readonly ushort[] _indexBuffer;
     private readonly byte[] _vertexBuffer;
@@ -31,19 +33,19 @@ internal sealed class VertexRenderer : GraphicsResource
         _frameBuffer = frameBuffer ?? throw new ArgumentNullException(nameof(frameBuffer));
     }
 
-    public void BeginBatch(uint materialId)
+    public void BeginBatch(Material? material, Texture2d? texture)
     {
         if (_graphics == null) throw BeginNotCalledException();
-        if (_material?.Id == materialId) return;
+        if (_material == material &&
+            _texture == texture) return;
+
+        EndBatch();
 
         // material changed
-        var material = FetchMaterial(materialId);
-        if (material != _material)
-        {
-            EndBatch();
-            _material = material;
-            _stride = material.VertexStride;
-        }
+        var game = Game.Current;
+        _material = material ?? game.DefaultResources.ErrorMaterial;
+        _texture = texture ?? game.Graphics.NullTexture2d;
+        _stride = _material.VertexStride;
     }
 
     public void ClearDepth()
@@ -69,6 +71,9 @@ internal sealed class VertexRenderer : GraphicsResource
         if (_indexCount == 0) return;
         if (_graphics == null || _commandList == null || _frameBuffer == null) throw BeginNotCalledException();
         if (_material == null) throw new Exception("Render material is null");
+        if (_texture == null) throw new Exception("Render texture is null");
+
+        _material.MainTextureProperty?.Set(_texture);
 
         var (indexCount, vertexCount) = ConsumeCounts();
         var vertexSize = vertexCount * _stride;
@@ -80,7 +85,7 @@ internal sealed class VertexRenderer : GraphicsResource
         _commandList.SetPipeline(_material.CreatePipeline(_graphics, _frameBuffer));
 
         uint slot = 0;
-        foreach (var resourceSet in _material.GetResourceSets())
+        foreach (var resourceSet in _material.CreateResourceSets(_graphics))
         {
             _commandList.SetGraphicsResourceSet(slot++, resourceSet);
         }
@@ -88,7 +93,6 @@ internal sealed class VertexRenderer : GraphicsResource
         _commandList.DrawIndexed(indexCount);
         _commandList.End();
 
-        var resources = Game.Current.Resources;
         var device = _graphics.Device;
         device.WaitForIdle();
         device.UpdateBuffer(_deviceIndexBuffer, 0, _indexBuffer.AsSpan(0, (int)indexCount));
@@ -175,16 +179,6 @@ internal sealed class VertexRenderer : GraphicsResource
 
     private static Exception BeginNotCalledException() => new($"{nameof(VertexRenderer)}.{nameof(Begin)} must be called before Rendering.");
     private static Exception BeginBatchNotCalledException() => new($"{nameof(VertexRenderer)}.{nameof(BeginBatch)} must be called before Rendering.");
-
-    private static Material FetchMaterial(uint id)
-    {
-        if (Game.Current.Resources.TryGet(id, out var resource) &&
-            resource is Material material)
-        {
-            return material;
-        }
-        return Game.Current.Resources.ErrorMaterial;
-    }
 
     private static Exception OutOfSpaceException() => new("Unable to render, not enough vertex space.");
 

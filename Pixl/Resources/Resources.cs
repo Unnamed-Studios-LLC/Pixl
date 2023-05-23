@@ -5,19 +5,7 @@ internal sealed class Resources
     private readonly Dictionary<uint, Resource> _resources = new();
     private uint _nextResourceId = 1;
 
-    public Resources(SharedProperty worldToClipMatrix, Material defaultMaterial, Material errorMaterial)
-    {
-        WorldToClipMatrix = worldToClipMatrix;
-        DefaultMaterial = defaultMaterial;
-        ErrorMaterial = errorMaterial;
-    }
-
     public IEnumerable<Resource> All => _resources.Values;
-
-    // TODO move these to a better "Default Resources" area
-    public SharedProperty WorldToClipMatrix { get; }
-    public Material DefaultMaterial { get; }
-    public Material ErrorMaterial { get; }
 
     public void Add(Resource resource)
     {
@@ -40,13 +28,6 @@ internal sealed class Resources
         resource.Id = 0;
         resource.Resources = null;
         return true;
-    }
-
-    public void Start()
-    {
-        Add(WorldToClipMatrix);
-        Add(DefaultMaterial);
-        Add(ErrorMaterial);
     }
 
     public bool TryGet(uint id, out Resource? resource) => _resources.TryGetValue(id, out resource);

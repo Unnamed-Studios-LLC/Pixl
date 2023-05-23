@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace Pixl;
 
@@ -14,6 +15,7 @@ internal static class ImplUtils
         catch (Exception e)
         {
             // TODO log error
+            //Debug.Log(e);
         }
     }
 }

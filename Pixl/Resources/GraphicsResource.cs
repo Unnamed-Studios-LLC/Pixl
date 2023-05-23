@@ -4,9 +4,8 @@ public abstract class GraphicsResource : Resource
 {
     internal Graphics? Graphics { get; set; }
 
-    internal void Create()
+    internal void Create(Graphics graphics)
     {
-        var graphics = Game.Current.Graphics;
         if (!graphics.Setup) return;
         if (Graphics != null) throw new Exception($"{nameof(GraphicsResource)} already created!");
         Graphics = graphics;
@@ -24,7 +23,8 @@ public abstract class GraphicsResource : Resource
     {
         base.OnAdd();
 
-        Create();
+        var graphics = Game.Current.Graphics;
+        Create(graphics);
     }
 
     internal override void OnRemove()

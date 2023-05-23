@@ -1,4 +1,7 @@
-﻿namespace Pixl.Win.Editor;
+﻿using System;
+using System.IO;
+
+namespace Pixl.Win.Editor;
 
 internal sealed class WinEditorPlayer : IPlayer
 {

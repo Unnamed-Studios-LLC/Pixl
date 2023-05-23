@@ -3,16 +3,19 @@
 namespace Pixl;
 
 [StructLayout(LayoutKind.Explicit)]
-internal struct PositionColorVertex
+internal struct PositionTexColorVertex
 {
     [FieldOffset(0)]
     public Vec3 Position;
     [FieldOffset(12)]
+    public Vec2 TexCoord;
+    [FieldOffset(20)]
     public Color32 Color;
 
-    public PositionColorVertex(Vec3 position, Color32 color)
+    public PositionTexColorVertex(Vec3 position, Vec2 texCoord, Color32 color)
     {
         Position = position;
+        TexCoord = texCoord;
         Color = color;
     }
 }
