@@ -18,8 +18,6 @@ internal sealed class WinGamePlayer : IPlayer
         Window = window;
     }
 
-    public Span<WindowEvent> DequeueEvents() => Window.DequeueEvents();
-
     public void Log(object @object)
     {
         System.Diagnostics.Debug.WriteLine(@object);

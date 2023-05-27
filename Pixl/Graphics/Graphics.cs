@@ -39,7 +39,7 @@ internal sealed class Graphics
             HasMainSwapchain = true,
             PreferDepthRangeZeroToOne = true,
             PreferStandardClipSpaceYDirection = true,
-            ResourceBindingModel = ResourceBindingModel.Default,
+            ResourceBindingModel = ResourceBindingModel.Improved,
             SwapchainSrgbFormat = false,
             SyncToVerticalBlank = false
         };

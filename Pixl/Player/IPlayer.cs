@@ -13,7 +13,6 @@ internal interface IPlayer
     /// The path pointing to application assets. May be read-only on certain platforms. Use <see cref="Application.DataPath"/> to save game data.
     /// </summary>
     string AssetsPath { get; }
-    string InternalAssetsPath { get; }
 
     /// <summary>
     /// The window the player is rendering to

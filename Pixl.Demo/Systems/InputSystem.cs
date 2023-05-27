@@ -37,14 +37,14 @@
                 cameraTransform.Position.Y += moveSpeed;
             }
 
-            var zoomSpeed = 3 * Time.UpdateDelta;
+            var zoomSpeed = 1 + Time.UpdateDelta;
             if (Input.GetKey(KeyCode.Q))
             {
-                cameraTransform.Scale += zoomSpeed;
+                cameraTransform.Scale *= zoomSpeed;
             }
             if (Input.GetKey(KeyCode.E))
             {
-                cameraTransform.Scale = Vec3.Max(Vec3.Zero, cameraTransform.Scale - zoomSpeed);
+                cameraTransform.Scale *= 1 / zoomSpeed;// Vec3.Max(Vec3.Zero, cameraTransform.Scale - zoomSpeed);
             }
 
             var rotateSpeed = 180 * Time.UpdateDelta;

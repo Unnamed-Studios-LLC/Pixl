@@ -11,18 +11,17 @@ try
     WinWindow window = new("Pixl Game", new Int2(1000, 800));
     WinGamePlayer player = new(window);
     Resources resources = new();
+    Graphics graphics = new();
 
-    var graphics = new Graphics();
     graphics.Start(resources, window, GraphicsApi.DirectX);
 
     var game = new Game(resources, graphics, player, new Entry());
-
     var gameThread = new Thread(() => runGame(window, game, graphics));
     gameThread.Start();
 
     window.Run();
-    gameThread.Join();
 
+    gameThread.Join();
     graphics.Stop(resources);
 
     return player.ExitCode;

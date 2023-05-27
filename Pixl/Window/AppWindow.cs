@@ -1,9 +1,14 @@
-﻿using Veldrid;
+﻿using System.Runtime.InteropServices;
+using Veldrid;
 
 namespace Pixl;
 
 internal abstract class AppWindow
 {
+    private readonly object _eventLock = new();
+    private List<WindowEvent> _events = new();
+    private List<WindowEvent> _eventsProcessing = new();
+
     /// <summary>
     /// The size of the main Window
     /// </summary>
@@ -34,5 +39,25 @@ internal abstract class AppWindow
     /// Dequeues received events
     /// </summary>
     /// <returns></returns>
-    public abstract Span<WindowEvent> DequeueEvents();
+    public virtual Span<WindowEvent> DequeueEvents()
+    {
+        lock (_eventLock)
+        {
+            _eventsProcessing.Clear();
+            (_events, _eventsProcessing) = (_eventsProcessing, _events);
+        }
+        return CollectionsMarshal.AsSpan(_eventsProcessing);
+    }
+
+    /// <summary>
+    /// Push an event to the window
+    /// </summary>
+    /// <param name="event"></param>
+    public virtual void PushEvent(in WindowEvent @event)
+    {
+        lock (_eventLock)
+        {
+            _events.Add(@event);
+        }
+    }
 }

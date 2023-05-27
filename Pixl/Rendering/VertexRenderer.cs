@@ -80,6 +80,8 @@ internal sealed class VertexRenderer : GraphicsResource
 
         _commandList.Begin();
         _commandList.SetFramebuffer(_frameBuffer);
+        _commandList.UpdateBuffer(_deviceIndexBuffer, 0, _indexBuffer.AsSpan(0, (int)indexCount));
+        _commandList.UpdateBuffer(_deviceVertexBuffer, 0, _vertexBuffer.AsSpan(0, (int)vertexSize));
         _commandList.SetIndexBuffer(_deviceIndexBuffer, IndexFormat.UInt16);
         _commandList.SetVertexBuffer(0, _deviceVertexBuffer);
         _commandList.SetPipeline(_material.CreatePipeline(_graphics, _frameBuffer));
@@ -94,10 +96,8 @@ internal sealed class VertexRenderer : GraphicsResource
         _commandList.End();
 
         var device = _graphics.Device;
-        device.WaitForIdle();
-        device.UpdateBuffer(_deviceIndexBuffer, 0, _indexBuffer.AsSpan(0, (int)indexCount));
-        device.UpdateBuffer(_deviceVertexBuffer, 0, _vertexBuffer.AsSpan(0, (int)vertexSize));
         device.SubmitCommands(_commandList);
+        device.WaitForIdle();
     }
 
     public unsafe void RenderQuad<TVertex>(in TVertex a, in TVertex b, in TVertex c, in TVertex d) where TVertex : unmanaged

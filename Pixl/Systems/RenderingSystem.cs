@@ -91,6 +91,7 @@ public sealed class RenderingSystem : ComponentSystem
 
                 renderer.RenderQuad(in a, in b, in c, in d);
             });
+            renderer.EndBatch();
         });
     }
 

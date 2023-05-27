@@ -37,7 +37,8 @@ namespace Pixl.Demo.Systems
                 .Add<Sprite>()
                 .Build();
 
-            var fileStream = File.OpenRead("Assets/characters.png");
+            var path = Path.Combine(Application.AssetsPath, "characters.png");
+            var fileStream = File.OpenRead(path);
             _charactersTexture = Texture2d.CreateFromFile(fileStream, SampleMode.Point, ColorFormat.Rgba32);
         }
 
@@ -99,6 +100,8 @@ namespace Pixl.Demo.Systems
             _uiLayout.Set(new CanvasTransform(new Vec2(10, 120), Vec3.Zero, Vec2.One, new Vec2(40, 20), Vec2.Zero, Vec2.Zero, 0));
             _uiLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 32, 32), Color32.White));
             Scene.Entities.CreateEntity(_uiLayout);
+
+            CreateEntities(10_000);
         }
 
         public override void OnFixedUpdate()
@@ -152,7 +155,8 @@ namespace Pixl.Demo.Systems
 
         private void UpdateTitle()
         {
-            Window.Title = $"Pixl Demo - {Application.GraphicsApi} - {Scene.Entities.Count} - {_fps}";
+            var windowSize = Window.Size;
+            Window.Title = $"Pixl Demo - {Application.GraphicsApi} - {Scene.Entities.Count} - {_fps} - {windowSize}";
         }
     }
 }

@@ -4,15 +4,19 @@ namespace Pixl;
 
 public abstract class Shader
 {
-    private readonly string _filePath;
+    private readonly AssetHandle _assetHandle;
 
-    public Shader(string filePath)
+    internal Shader(AssetHandle assetHandle)
     {
-        _filePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
+        _assetHandle = assetHandle;
     }
 
     internal byte[] GetBytes()
     {
-        return Encoding.UTF8.GetBytes(File.ReadAllText(_filePath));
+        var assetStream = _assetHandle.GetStream();
+        string text;
+        using (var streamReader = new StreamReader(assetStream))
+            text = streamReader.ReadToEnd();
+        return Encoding.UTF8.GetBytes(text);
     }
 }

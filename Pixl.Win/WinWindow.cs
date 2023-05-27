@@ -18,33 +18,9 @@ internal class WinWindow : AppWindow
     private readonly IntPtr _hwnd;
     private readonly WindowProc _windowProc;
 
-    private List<WindowEvent> _events = new();
-    private List<WindowEvent> _eventsProcessing = new();
-
     private Int2 _clientSize;
     private WindowStyle _windowStyle;
     private string _windowTitle;
-
-    public int ExitCode { get; set; }
-
-    public override Int2 MousePosition => GetMousePosition();
-
-    public override Int2 Size
-    {
-        get => _clientSize;
-        set => throw new NotImplementedException();
-    }
-    public override WindowStyle Style
-    {
-        get => _windowStyle;
-        set => throw new NotImplementedException();
-    }
-    public override SwapchainSource SwapchainSource { get; }
-    public override string Title
-    {
-        get => _windowTitle;
-        set => SetWindowTitle(value);
-    }
 
     public WinWindow(string title, Int2 size)
     {
@@ -90,14 +66,25 @@ internal class WinWindow : AppWindow
         User32Methods.UpdateWindow(_hwnd);
     }
 
-    public override Span<WindowEvent> DequeueEvents()
+    public int ExitCode { get; set; }
+
+    public override Int2 MousePosition => GetMousePosition();
+
+    public override Int2 Size
     {
-        lock (_events)
-        {
-            _eventsProcessing.Clear();
-            (_events, _eventsProcessing) = (_eventsProcessing, _events);
-        }
-        return CollectionsMarshal.AsSpan(_eventsProcessing);
+        get => _clientSize;
+        set => throw new NotImplementedException();
+    }
+    public override WindowStyle Style
+    {
+        get => _windowStyle;
+        set => throw new NotImplementedException();
+    }
+    public override SwapchainSource SwapchainSource { get; }
+    public override string Title
+    {
+        get => _windowTitle;
+        set => SetWindowTitle(value);
     }
 
     public void Run()
@@ -110,20 +97,12 @@ internal class WinWindow : AppWindow
             User32Methods.TranslateMessage(ref msg);
             User32Methods.DispatchMessage(ref msg);
         }
-        OnEvent(new WindowEvent(WindowEventType.Quit, result));
+        PushEvent(new WindowEvent(WindowEventType.Quit, result));
     }
 
     public void Stop()
     {
         User32Methods.PostQuitMessage(ExitCode);
-    }
-
-    protected virtual void OnEvent(in WindowEvent @event)
-    {
-        lock (_events)
-        {
-            _events.Add(@event);
-        }
     }
 
     private Int2 GetMousePosition()
@@ -136,7 +115,7 @@ internal class WinWindow : AppWindow
 
     private void OnPaint()
     {
-        OnEvent(new WindowEvent(WindowEventType.Render));
+        PushEvent(new WindowEvent(WindowEventType.Render));
     }
 
     private void OnKeyDown(int virtualKeyCode, int flags)
@@ -146,14 +125,14 @@ internal class WinWindow : AppWindow
 
         var keyCode = KeyHelper.GetKeyCode(virtualKeyCode);
         if (keyCode == KeyCode.None) return;
-        OnEvent(new WindowEvent(WindowEventType.KeyDown, (int)keyCode));
+        PushEvent(new WindowEvent(WindowEventType.KeyDown, (int)keyCode));
     }
 
     private void OnKeyUp(int virtualKeyCode, int flags)
     {
         var keyCode = KeyHelper.GetKeyCode(virtualKeyCode);
         if (keyCode == KeyCode.None) return;
-        OnEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
+        PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
     }
 
     private void OnSize(int action, int packedSize)

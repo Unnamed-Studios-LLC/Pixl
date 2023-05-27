@@ -7,30 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="InternalAssets\error.frag" />
-    <None Remove="InternalAssets\error.vert" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="InternalAssets\default.frag">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="InternalAssets\default.vert">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="InternalAssets\error.frag">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="InternalAssets\error.vert">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="SixLabors.ImageSharp" Version="3.0.1" PrivateAssets="compile" />
     <PackageReference Include="UnnamedStudios.EntitiesDb" Version="1.0.2" />
     <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
     <PackageReference Include="Veldrid.SPIRV" Version="1.0.15" PrivateAssets="compile" />
   </ItemGroup>
-
+  <ItemGroup>
+    <EmbeddedResource Include="InternalAssets\default.frag" />
+    <EmbeddedResource Include="InternalAssets\default.vert" />
+    <EmbeddedResource Include="InternalAssets\error.frag" />
+    <EmbeddedResource Include="InternalAssets\error.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Remove="Assets\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Assets\" />
+  </ItemGroup>
 </Project>

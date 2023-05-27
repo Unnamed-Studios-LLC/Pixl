@@ -79,6 +79,7 @@ public sealed class CanvasSystem : ComponentSystem
 
                 renderer.RenderQuad(in a, in b, in c, in d);
             });
+            renderer.EndBatch();
         });
     }
 }

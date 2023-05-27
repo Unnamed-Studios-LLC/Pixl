@@ -34,13 +34,13 @@ public class Material : GraphicsResource
     private IEnumerable<Property> LocalProperties => Properties.Where(x => x.Scope == PropertyScope.Local);
     private IEnumerable<Property> Properties => VertexProperties.Concat(FragmentProperties);
 
-    internal static Material CreateDefault(string internalAssetsPath, Property worldToClipMatrix)
+    internal static Material CreateDefault(Property worldToClipMatrix)
     {
-        var vertexPath = Path.Combine(internalAssetsPath, "default.vert");
-        var fragmentPath = Path.Combine(internalAssetsPath, "default.frag");
+        var vertexHandle = AssetHandle.CreateInternal("default.vert");
+        var fragmentHandle = AssetHandle.CreateInternal("default.frag");
 
-        var vertexShader = new VertexShader<PositionTexColorVertex>(vertexPath);
-        var fragmentShader = new FragmentShader(fragmentPath);
+        var vertexShader = new VertexShader<PositionTexColorVertex>(vertexHandle);
+        var fragmentShader = new FragmentShader(fragmentHandle);
 
         var vertexProperties = new Property[]
         { 
@@ -55,13 +55,13 @@ public class Material : GraphicsResource
         return new Material(vertexShader, fragmentShader, vertexProperties, fragmentProperties);
     }
 
-    internal static Material CreateError(string internalAssetsPath, Property worldToClipMatrix)
+    internal static Material CreateError(Property worldToClipMatrix)
     {
-        var vertexPath = Path.Combine(internalAssetsPath, "error.vert");
-        var fragmentPath = Path.Combine(internalAssetsPath, "error.frag");
+        var vertexHandle = AssetHandle.CreateInternal("error.vert");
+        var fragmentHandle = AssetHandle.CreateInternal("error.frag");
 
-        var vertexShader = new VertexShader<PositionVertex>(vertexPath);
-        var fragmentShader = new FragmentShader(fragmentPath);
+        var vertexShader = new VertexShader<PositionVertex>(vertexHandle);
+        var fragmentShader = new FragmentShader(fragmentHandle);
 
         var vertexProperties = new Property[]
         {

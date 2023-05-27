@@ -6,9 +6,22 @@ global using System.IO;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Reflection;
 
 [assembly: InternalsVisibleTo("Pixl.Demo")]
 [assembly: InternalsVisibleTo("Pixl.Editor")]
+
+[assembly: InternalsVisibleTo("Pixl.Android")]
+[assembly: InternalsVisibleTo("Pixl.Android.Editor")]
+[assembly: InternalsVisibleTo("Pixl.Android.Player")]
+
+[assembly: InternalsVisibleTo("Pixl.iOS")]
+[assembly: InternalsVisibleTo("Pixl.iOS.Editor")]
+[assembly: InternalsVisibleTo("Pixl.iOS.Player")]
+
+[assembly: InternalsVisibleTo("Pixl.Mac")]
+[assembly: InternalsVisibleTo("Pixl.Mac.Editor")]
+[assembly: InternalsVisibleTo("Pixl.Mac.Player")]
 
 [assembly: InternalsVisibleTo("Pixl.Win")]
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]
@@ -23,6 +36,7 @@ namespace Pixl
         private long _startTime;
         private long _nextFixedTime;
         private readonly ManualResetEvent _waitEvent = new(false);
+        private readonly Assembly _assembly = Assembly.GetExecutingAssembly();
 
         public Game(Resources resources, Graphics graphics, IPlayer player, IGameEntry entry) : base(player)
         {
@@ -34,8 +48,6 @@ namespace Pixl
         }
 
         internal static Game Current => s_games.First(); // TODO thread matching
-
-        public string InternalAssetsPath => Player.InternalAssetsPath;
 
         public DefaultResources DefaultResources { get; }
         public IGameEntry Entry { get; }
@@ -108,13 +120,11 @@ namespace Pixl
             }
         }
 
-        internal string GetInternalAssetPath(string localPath) => Path.Combine(Player.InternalAssetsPath, localPath);
-
         private DefaultResources CreateDefaultResources()
         {
             var worldToClipMatrix = new Property("WorldToClipMatrix", PropertyScope.Shared, PropertyDescriptor.CreateStandard(PropertyType.Mat4));
-            var defaultMaterial = Material.CreateDefault(InternalAssetsPath, worldToClipMatrix);
-            var errorMaterial = Material.CreateError(InternalAssetsPath, worldToClipMatrix);
+            var defaultMaterial = Material.CreateDefault(worldToClipMatrix);
+            var errorMaterial = Material.CreateError(worldToClipMatrix);
 
             return new DefaultResources(worldToClipMatrix, defaultMaterial, errorMaterial);
         }

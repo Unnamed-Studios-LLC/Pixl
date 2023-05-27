@@ -6,7 +6,9 @@ namespace Pixl;
 
 public class VertexShader : Shader
 {
-    public VertexShader(string filePath, Type vertexType) : base(filePath)
+    public VertexShader(string filePath, Type vertexType) : this(AssetHandle.CreateAbsolutePath(filePath), vertexType) { }
+
+    internal VertexShader(AssetHandle assetHandle, Type vertexType) : base(assetHandle)
     {
         VertexLayoutDescription = GenerateVertexDescription(vertexType);
     }
@@ -37,5 +39,7 @@ public class VertexShader : Shader
 
 public sealed class VertexShader<T> : VertexShader where T : unmanaged
 {
-    public VertexShader(string filePath) : base(filePath, typeof(T)) { }
+    public VertexShader(string filePath) : this(AssetHandle.CreateAbsolutePath(filePath)) { }
+
+    internal VertexShader(AssetHandle assetHandle) : base(assetHandle, typeof(T)) { }
 }
