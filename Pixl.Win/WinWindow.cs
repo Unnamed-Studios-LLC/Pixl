@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Veldrid;
 using WinApi.Gdi32;
 using WinApi.Kernel32;
 using WinApi.User32;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]
 [assembly: InternalsVisibleTo("Pixl.Win.Player")]
@@ -135,6 +135,37 @@ internal class WinWindow : AppWindow
         PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
     }
 
+    private void OnMouseDown(long wParam, long lParam, int buttonIndex)
+    {
+        if (buttonIndex > 2)
+        {
+            if (lParam <= 0 || lParam > 2) return; // unknown
+            buttonIndex += (int)lParam - 1;
+        }
+
+        var keyCode = KeyHelper.GetKeyCodeForMouseIndex(buttonIndex);
+        if (keyCode == KeyCode.None) return;
+        PushEvent(new WindowEvent(WindowEventType.KeyDown, (int)keyCode));
+    }
+
+    private void OnMouseMove()
+    {
+        PushEvent(new WindowEvent(WindowEventType.MouseMove));
+    }
+
+    private void OnMouseUp(long wParam, long lParam, int buttonIndex)
+    {
+        if (buttonIndex > 2)
+        {
+            if (lParam <= 0 || lParam > 2) return; // unknown
+            buttonIndex += (int)lParam - 1;
+        }
+
+        var keyCode = KeyHelper.GetKeyCodeForMouseIndex(buttonIndex);
+        if (keyCode == KeyCode.None) return;
+        PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
+    }
+
     private void OnSize(int action, int packedSize)
     {
         var updateSize = action switch
@@ -169,6 +200,33 @@ internal class WinWindow : AppWindow
                     break;
                 case WM.SIZE:
                     OnSize((int)wParam.ToInt64(), (int)lParam.ToInt64());
+                    break;
+                case WM.LBUTTONDOWN:
+                    OnMouseDown(wParam.ToInt64(), lParam.ToInt64(), 0);
+                    break;
+                case WM.LBUTTONUP:
+                    OnMouseUp(wParam.ToInt64(), lParam.ToInt64(), 0);
+                    break;
+                case WM.RBUTTONDOWN:
+                    OnMouseDown(wParam.ToInt64(), lParam.ToInt64(), 1);
+                    break;
+                case WM.RBUTTONUP:
+                    OnMouseUp(wParam.ToInt64(), lParam.ToInt64(), 1);
+                    break;
+                case WM.MBUTTONDOWN:
+                    OnMouseDown(wParam.ToInt64(), lParam.ToInt64(), 2);
+                    break;
+                case WM.MBUTTONUP:
+                    OnMouseUp(wParam.ToInt64(), lParam.ToInt64(), 2);
+                    break;
+                case WM.XBUTTONDOWN:
+                    OnMouseDown(wParam.ToInt64(), lParam.ToInt64(), 3);
+                    break;
+                case WM.XBUTTONUP:
+                    OnMouseUp(wParam.ToInt64(), lParam.ToInt64(), 3);
+                    break;
+                case WM.MOUSEMOVE:
+                    OnMouseMove();
                     break;
             }
         }

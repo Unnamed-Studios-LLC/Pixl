@@ -41,7 +41,7 @@ internal abstract class Api
     /// <summary>
     /// The path pointing to application assets. May be read-only on certain platforms. Use <see cref="Application.DataPath"/> to save game data.
     /// </summary>
-    public void Log(object @object) => Player.Log(@object);
+    public void Log(object @object) => Player.Logger.Log(@object);
 
     // ================
     // ================  Input

@@ -4,7 +4,7 @@
     {
         public void OnStart(Scene scene)
         {
-            throw new NotImplementedException();
+
         }
     }
 }

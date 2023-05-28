@@ -6,28 +6,34 @@ namespace Pixl;
 
 public class VertexShader : Shader
 {
-    public VertexShader(string filePath, Type vertexType) : this(AssetHandle.CreateAbsolutePath(filePath), vertexType) { }
-
-    internal VertexShader(AssetHandle assetHandle, Type vertexType) : base(assetHandle)
+    internal VertexShader(AssetHandle assetHandle, VertexLayoutDescription vertexLayout) : base(assetHandle)
     {
-        VertexLayoutDescription = GenerateVertexDescription(vertexType);
+        VertexLayoutDescription = vertexLayout;
     }
 
     internal VertexLayoutDescription VertexLayoutDescription { get; }
+}
 
-    private static VertexLayoutDescription GenerateVertexDescription(Type type)
+public sealed class VertexShader<T> : VertexShader where T : unmanaged
+{
+    public VertexShader(string filePath) : this(AssetHandle.CreateAbsolutePath(filePath)) { }
+
+    internal VertexShader(AssetHandle assetHandle) : base(assetHandle, GenerateVertexDescription()) { }
+
+    private static VertexLayoutDescription GenerateVertexDescription()
     {
-        var elements = GetElementDescriptions(type)
+        var elements = GetElementDescriptions()
             .ToArray();
-        return new VertexLayoutDescription((uint)Marshal.SizeOf(type), elements);
+        return new VertexLayoutDescription((uint)Marshal.SizeOf<T>(), elements);
     }
 
-    private static IEnumerable<VertexElementDescription> GetElementDescriptions(Type type)
+    private static IEnumerable<VertexElementDescription> GetElementDescriptions()
     {
+        var type = typeof(T);
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         return fields.Select(x =>
         {
-            var offset = Marshal.OffsetOf(type, x.Name);
+            var offset = Marshal.OffsetOf<T>(x.Name);
             if (!x.FieldType.TryGetVertexFormat(out var format))
             {
                 throw new Exception($"{type} contains an invalid vertex field: {x.Name}. Only VecX, IntX, or Color structs are allowed.");
@@ -35,11 +41,4 @@ public class VertexShader : Shader
             return new VertexElementDescription(x.Name, VertexElementSemantic.TextureCoordinate, format, (uint)offset);
         });
     }
-}
-
-public sealed class VertexShader<T> : VertexShader where T : unmanaged
-{
-    public VertexShader(string filePath) : this(AssetHandle.CreateAbsolutePath(filePath)) { }
-
-    internal VertexShader(AssetHandle assetHandle) : base(assetHandle, typeof(T)) { }
 }

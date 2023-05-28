@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Pixl
 {
@@ -25,5 +26,17 @@ namespace Pixl
             set => (X, Y) = value;
         }
         public Int2 Size => new Int2(Width, Height);
+
+        public static bool operator ==(in RectInt a, in RectInt b) => a.Equals(in b);
+        public static bool operator !=(in RectInt a, in RectInt b) => !a.Equals(in b);
+
+        public override bool Equals([NotNullWhen(true)] object? obj)
+        {
+            if (obj is RectInt rectInt) return Equals(in rectInt);
+            return base.Equals(obj);
+        }
+        public bool Equals(in RectInt other) => other.X == X && other.Y == Y && other.Width == Width && other.Height == Height;
+
+        public override int GetHashCode() => base.GetHashCode();
     }
 }

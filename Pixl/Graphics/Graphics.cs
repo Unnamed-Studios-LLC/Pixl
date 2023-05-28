@@ -9,15 +9,12 @@ internal sealed class Graphics
     private CommandList? _mainCommands;
     private ResourceFactory? _resourceFactory;
     private GraphicsApi _api;
-    private Texture2d? _nullTexture2d;
 
     public GraphicsApi Api => _device != null ? _api : throw SetupException();
     public CommandList Commands => _mainCommands ?? throw SetupException();
     public GraphicsDevice Device => _device ?? throw SetupException();
     public ResourceFactory ResourceFactory => _resourceFactory ?? throw SetupException();
     public Framebuffer SwapchainFramebuffer => _device?.SwapchainFramebuffer ?? throw SetupException();
-
-    public Texture2d NullTexture2d => _nullTexture2d ?? throw SetupException();
 
     public bool Setup => _mainCommands != null;
 
@@ -39,7 +36,7 @@ internal sealed class Graphics
             HasMainSwapchain = true,
             PreferDepthRangeZeroToOne = true,
             PreferStandardClipSpaceYDirection = true,
-            ResourceBindingModel = ResourceBindingModel.Improved,
+            ResourceBindingModel = ResourceBindingModel.Default,
             SwapchainSrgbFormat = false,
             SyncToVerticalBlank = false
         };
@@ -90,7 +87,14 @@ internal sealed class Graphics
     public void SwapBuffers()
     {
         if (_device == null) throw SetupException();
-        _device.SwapBuffers();
+        try
+        {
+            _device.SwapBuffers();
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e);
+        }
     }
 
     public void UpdateWindowSize(Int2 windowSize)
@@ -111,9 +115,6 @@ internal sealed class Graphics
     private void CreateResources(Resources resources)
     {
         _mainCommands = _resourceFactory?.CreateCommandList();
-        _nullTexture2d = new Texture2d(new Int2(1, 1), SampleMode.Point, ColorFormat.R8);
-        _nullTexture2d.GetData()[0] = byte.MaxValue;
-        _nullTexture2d.Create(this);
 
         foreach (var resource in resources.All.Where(x => x is GraphicsResource).Select(x => (GraphicsResource)x))
         {
@@ -127,9 +128,6 @@ internal sealed class Graphics
         {
             resource.Destroy();
         }
-
-        _nullTexture2d?.Destroy();
-        _nullTexture2d = null;
 
         _mainCommands?.Dispose();
         _mainCommands = null;

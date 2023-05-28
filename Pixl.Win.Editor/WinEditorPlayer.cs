@@ -5,16 +5,18 @@ namespace Pixl.Win.Editor;
 
 internal sealed class WinEditorPlayer : IPlayer
 {
+    public WinEditorPlayer()
+    {
+        MemoryLogger = new(8388608, 4096); // 8 MB
+    }
+
     public int ExitCode { get; set; }
 
     public string AssetsPath => "Assets";
     public string DataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pixl Editor", "Company Name", "Product Name");
-    public string InternalAssetsPath => "InternalAssets";
 
     public AppWindow Window => throw new NotImplementedException();
+    public ILogger Logger => MemoryLogger;
 
-    public void Log(object @object)
-    {
-        throw new NotImplementedException();
-    }
+    public MemoryLogger MemoryLogger { get; }
 }

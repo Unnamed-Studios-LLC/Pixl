@@ -23,7 +23,6 @@ internal readonly struct AssetHandle
         {
             case AssetStoreLocation.Internal:
                 var assembly = Assembly.GetExecutingAssembly();
-                var resources = assembly.GetManifestResourceNames();
                 var internalStream = assembly.GetManifestResourceStream($"Pixl.InternalAssets.{Key}");
                 if (internalStream is null) throw new Exception($"Internal file stream not found for {Key}");
                 return internalStream;

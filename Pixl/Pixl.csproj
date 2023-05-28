@@ -17,9 +17,17 @@
     <EmbeddedResource Include="InternalAssets\default.vert" />
     <EmbeddedResource Include="InternalAssets\error.frag" />
     <EmbeddedResource Include="InternalAssets\error.vert" />
+    <EmbeddedResource Include="InternalAssets\gui.frag">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="InternalAssets\gui.vert">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <None Remove="Assets\" />
+    <None Remove="InternalAssets\gui.frag" />
+    <None Remove="InternalAssets\gui.vert" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Assets\" />

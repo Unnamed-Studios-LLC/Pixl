@@ -43,8 +43,8 @@ namespace Pixl
             Resources = resources ?? throw new ArgumentNullException(nameof(resources));
             Graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
             Entry = entry ?? throw new ArgumentNullException(nameof(entry));
-
-            DefaultResources = CreateDefaultResources();
+            DefaultResources = new DefaultResources();
+            Scene = new Scene(resources, DefaultResources);
         }
 
         internal static Game Current => s_games.First(); // TODO thread matching
@@ -53,7 +53,7 @@ namespace Pixl
         public IGameEntry Entry { get; }
         public Graphics Graphics { get; }
         public Resources Resources { get; }
-        public Scene Scene { get; } = new();
+        public Scene Scene { get; }
         public RenderTexture? TargetRenderTexture { get; set; }
 
         public bool Run()
@@ -63,6 +63,7 @@ namespace Pixl
             FixedUpdates();
             Update();
             Render();
+            Player.Logger.Flush();
             return true;
         }
 
@@ -118,15 +119,6 @@ namespace Pixl
             {
                 s_games.Remove(game);
             }
-        }
-
-        private DefaultResources CreateDefaultResources()
-        {
-            var worldToClipMatrix = new Property("WorldToClipMatrix", PropertyScope.Shared, PropertyDescriptor.CreateStandard(PropertyType.Mat4));
-            var defaultMaterial = Material.CreateDefault(worldToClipMatrix);
-            var errorMaterial = Material.CreateError(worldToClipMatrix);
-
-            return new DefaultResources(worldToClipMatrix, defaultMaterial, errorMaterial);
         }
 
         private long GetTicksUntilNextUpdate()

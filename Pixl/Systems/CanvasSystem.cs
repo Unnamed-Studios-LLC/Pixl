@@ -37,35 +37,21 @@ public sealed class CanvasSystem : ComponentSystem
                 -1000, 1000);
 
             var parentSize = (Vec2)windowSize;
-            var worldToClip = projectionMatrix * Matrix4x4.Scale(new Vec3(canvas.Scale.X, canvas.Scale.Y, 1)) * Matrix4x4.Translate(new Vec3(0, 0, -1));
+            var worldToClip = projectionMatrix * Matrix4x4.Scale(new Vec3(canvas.Scale.X, canvas.Scale.Y, 1));
             WorldToClipMatrix?.Set(worldToClip);
 
             var game = Game.Current;
-            Texture2d texture = game.Graphics.NullTexture2d;
-            renderer.BeginBatch(Material, texture);
+            renderer.BeginBatch(Material);
             Scene.Entities.ForEach((ref Sprite sprite, ref CanvasTransform transform) =>
             {
-                if (sprite.TextureId != texture.Id)
-                {
-                    if (!game.Resources.TryGet(sprite.TextureId, out var resource) ||
-                        resource is not Texture2d spriteTexture)
-                    {
-                        spriteTexture = game.Graphics.NullTexture2d;
-                    }
-
-                    if (spriteTexture != texture)
-                    {
-                        texture = spriteTexture;
-                        renderer.BeginBatch(Material, texture);
-                    }
-                }
-
+                renderer.SetTexture(sprite.TextureId);
                 transform.GetTransformationMatrix(out var modelToWorld, in parentSize);
 
                 // clockwise quad vertices
                 Vec3 min = Vec3.Zero;
                 Vec3 max = transform.Size;
 
+                var texture = renderer.Texture;
                 var spriteMin = sprite.Rect.Min * texture.TexelSize;
                 var spriteMax = sprite.Rect.Max * texture.TexelSize;
 

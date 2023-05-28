@@ -115,9 +115,9 @@ namespace Pixl
         }
 
         public static Matrix4x4 Orthographic(float left, float right, float bottom, float top, float near, float far) => new Matrix4x4(
-            new Vec4(2f / (right - left), 0, 0, -(right + left) / (right - left)),
-            new Vec4(0, 2f / (top - bottom), 0, -(top + bottom) / (top - bottom)),
-            new Vec4(0, 0, -2f / (far - near), -(far + near) / (far - near)),
+            new Vec4(2f / (right - left), 0, 0, (left + right) / (left - right)),
+            new Vec4(0, 2f / (top - bottom), 0, (top + bottom) / (bottom - top)),
+            new Vec4(0, 0, 1.0f / (far - near), near / (near - far)),
             new Vec4(0, 0, 0, 1)
         );
 

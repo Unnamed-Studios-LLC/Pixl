@@ -1,4 +1,5 @@
-﻿using Veldrid;
+﻿using System.Runtime.InteropServices;
+using Veldrid;
 using Veldrid.SPIRV;
 
 namespace Pixl;
@@ -25,6 +26,8 @@ public class Material : GraphicsResource
         MainTextureProperty = fragmentProperties.FirstOrDefault(x => x.Descriptor.Type == PropertyType.Texture2d && x.Name.Equals("main", StringComparison.OrdinalIgnoreCase));
     }
 
+    public bool DepthTestEnabled { get; set; } = true;
+    public bool ClipRectEnabled { get; set; } = false;
     public IReadOnlyList<Property> VertexProperties { get; }
     public IReadOnlyList<Property> FragmentProperties { get; }
     public Property? MainTextureProperty { get; }
@@ -75,11 +78,11 @@ public class Material : GraphicsResource
     {
         var rasterizerState = new RasterizerStateDescription
         {
-            CullMode = FaceCullMode.Back,
+            CullMode = FaceCullMode.None,
             FillMode = PolygonFillMode.Solid,
             FrontFace = FrontFace.Clockwise,
-            DepthClipEnabled = true,
-            ScissorTestEnabled = false
+            DepthClipEnabled = DepthTestEnabled,
+            ScissorTestEnabled = ClipRectEnabled
         };
 
         var shaderSet = new ShaderSetDescription
@@ -91,7 +94,7 @@ public class Material : GraphicsResource
         var pipelineDescription = new GraphicsPipelineDescription
         {
             BlendState = BlendStateDescription.SingleAlphaBlend,
-            DepthStencilState = DepthStencilStateDescription.Disabled,
+            DepthStencilState = new DepthStencilStateDescription(false, false, ComparisonKind.Always),
             RasterizerState = rasterizerState,
             PrimitiveTopology = PrimitiveTopology.TriangleList,
             ResourceLayouts = GetResourceLayouts().ToArray(),

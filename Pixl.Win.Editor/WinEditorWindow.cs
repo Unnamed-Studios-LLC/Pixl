@@ -8,18 +8,20 @@ internal sealed class WinEditorWindow : WinWindow
 
     public WinEditorWindow(Int2 windowSize) : base("Pixl Editor", windowSize)
     {
-
     }
 
-    protected override void OnEvent(in WindowEvent @event)
+    public override void PushEvent(in WindowEvent @event)
     {
         switch (@event.Type)
         {
             case WindowEventType.Render:
                 OnRender?.Invoke();
                 return;
+            case WindowEventType.MouseMove:
+                OnRender?.Invoke();
+                return;
         }
 
-        base.OnEvent(@event);
+        base.PushEvent(@event);
     }
 }

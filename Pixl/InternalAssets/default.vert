@@ -14,6 +14,6 @@ layout(location = 1) out vec2 out_TexCoord;
 void main()
 {
     gl_Position = Camera.WorldToClipMatrix * vec4(in_Position, 1);
-    out_Color = in_Color;
     out_TexCoord = in_TexCoord;
+    out_Color = in_Color;
 }

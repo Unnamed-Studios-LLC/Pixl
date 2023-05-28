@@ -8,9 +8,9 @@ namespace Pixl
         private readonly SystemList _systems = new();
         private readonly VertexRenderer _renderer;
 
-        public Scene()
+        internal Scene(Resources resources, DefaultResources defaultResources)
         {
-            _renderer = new VertexRenderer(20_000, 600_000);
+            _renderer = new VertexRenderer(resources, defaultResources, ushort.MaxValue, 2_048_000);
         }
 
         public EntityDatabase Entities { get; } = new();

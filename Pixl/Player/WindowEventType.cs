@@ -7,6 +7,6 @@ internal enum WindowEventType
     KeyDown,
     KeyUp,
     Render,
-    MousePosition,
+    MouseMove,
     Character
 }

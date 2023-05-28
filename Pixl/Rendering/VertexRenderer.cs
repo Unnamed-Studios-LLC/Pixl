@@ -6,46 +6,56 @@ namespace Pixl;
 
 internal sealed class VertexRenderer : GraphicsResource
 {
+    private readonly Resources _resources;
+    private readonly Texture2d _nullTexture;
+    private readonly Material _errorMaterial;
+    private readonly ushort[] _indexBuffer;
+    private readonly byte[] _vertexBuffer;
+
     private Graphics? _graphics;
     private CommandList? _commandList;
     private Framebuffer? _frameBuffer;
     private Material? _material;
-    private Texture2d? _texture;
 
-    private readonly ushort[] _indexBuffer;
-    private readonly byte[] _vertexBuffer;
     private DeviceBuffer? _deviceIndexBuffer;
     private DeviceBuffer? _deviceVertexBuffer;
     private ushort _indexCount;
     private ushort _vertexCount;
     private uint _stride;
 
-    public VertexRenderer(int indexBatchSize, int vertexBatchByteSize)
+    public VertexRenderer(Resources resources, DefaultResources defaultResources, ushort indexBatchSize, int vertexBatchByteSize)
     {
-        _indexBuffer = new ushort[indexBatchSize * 3];
+        _resources = resources;
+        Texture = _nullTexture = defaultResources.NullTexture;
+        _errorMaterial = defaultResources.ErrorMaterial;
+        _indexBuffer = new ushort[indexBatchSize];
         _vertexBuffer = new byte[vertexBatchByteSize];
     }
 
+    public int BatchCount { get; private set; }
+    public Texture2d Texture { get; private set; }
+    public RectInt? ClipRect { get; private set; }
+
     public void Begin(Graphics graphics, CommandList commandList, Framebuffer frameBuffer)
     {
+        BatchCount = 0;
         _graphics = graphics;
         _commandList = commandList ?? throw new ArgumentNullException(nameof(commandList));
         _frameBuffer = frameBuffer ?? throw new ArgumentNullException(nameof(frameBuffer));
     }
 
-    public void BeginBatch(Material? material, Texture2d? texture)
+    public void BeginBatch(Material? material)
     {
         if (_graphics == null) throw BeginNotCalledException();
-        if (_material == material &&
-            _texture == texture) return;
+        if (_material == material) return;
 
         EndBatch();
 
         // material changed
-        var game = Game.Current;
-        _material = material ?? game.DefaultResources.ErrorMaterial;
-        _texture = texture ?? game.Graphics.NullTexture2d;
+        _material = material ?? _errorMaterial;
         _stride = _material.VertexStride;
+        Texture = _nullTexture;
+        ClipRect = null;
     }
 
     public void ClearDepth()
@@ -71,9 +81,9 @@ internal sealed class VertexRenderer : GraphicsResource
         if (_indexCount == 0) return;
         if (_graphics == null || _commandList == null || _frameBuffer == null) throw BeginNotCalledException();
         if (_material == null) throw new Exception("Render material is null");
-        if (_texture == null) throw new Exception("Render texture is null");
+        if (Texture == null) throw new Exception("Render texture is null");
 
-        _material.MainTextureProperty?.Set(_texture);
+        _material.MainTextureProperty?.Set(Texture);
 
         var (indexCount, vertexCount) = ConsumeCounts();
         var vertexSize = vertexCount * _stride;
@@ -84,12 +94,16 @@ internal sealed class VertexRenderer : GraphicsResource
         _commandList.UpdateBuffer(_deviceVertexBuffer, 0, _vertexBuffer.AsSpan(0, (int)vertexSize));
         _commandList.SetIndexBuffer(_deviceIndexBuffer, IndexFormat.UInt16);
         _commandList.SetVertexBuffer(0, _deviceVertexBuffer);
-        _commandList.SetPipeline(_material.CreatePipeline(_graphics, _frameBuffer));
+        _commandList.SetMaterial(_material, _frameBuffer, _graphics);
 
-        uint slot = 0;
-        foreach (var resourceSet in _material.CreateResourceSets(_graphics))
+        if (ClipRect != null)
         {
-            _commandList.SetGraphicsResourceSet(slot++, resourceSet);
+            var clipRect = ClipRect.Value;
+            _commandList.SetScissorRect(0, (uint)clipRect.X, (uint)clipRect.Y, (uint)clipRect.Width, (uint)clipRect.Height);
+        }
+        else
+        {
+            _commandList.SetFullScissorRect(0);
         }
 
         _commandList.DrawIndexed(indexCount);
@@ -98,6 +112,7 @@ internal sealed class VertexRenderer : GraphicsResource
         var device = _graphics.Device;
         device.SubmitCommands(_commandList);
         device.WaitForIdle();
+        BatchCount++;
     }
 
     public unsafe void RenderQuad<TVertex>(in TVertex a, in TVertex b, in TVertex c, in TVertex d) where TVertex : unmanaged
@@ -152,6 +167,38 @@ internal sealed class VertexRenderer : GraphicsResource
 
         _vertexCount += 3;
         _indexCount += 3;
+    }
+
+    public void SetClipRect(RectInt? clipRect)
+    {
+        if (ClipRect == clipRect) return;
+        EndBatch();
+        ClipRect = clipRect;
+    }
+
+    public void SetTexture(uint textureId)
+    {
+        if (Texture.Id == textureId) return;
+        Texture2d? texture = null;
+        if (_resources.TryGet(textureId, out var resource) &&
+            resource is Texture2d resourceTexture)
+        {
+            texture = resourceTexture;
+        }
+        SetTexture(texture);
+    }
+
+    public void SetTexture(Texture2d? texture)
+    {
+        texture ??= _nullTexture;
+        if (texture == Texture) return;
+        if (_material == null) throw BeginBatchNotCalledException();
+        if (_material.MainTextureProperty != null)
+        {
+            // If the material supports a texture, end batch
+            EndBatch();
+        }
+        Texture = texture;
     }
 
     internal override void OnCreate(Graphics graphics)

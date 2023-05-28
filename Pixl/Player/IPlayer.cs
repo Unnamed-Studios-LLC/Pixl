@@ -20,7 +20,7 @@ internal interface IPlayer
     AppWindow Window { get; }
 
     /// <summary>
-    /// Logs the string representation of an object
+    /// Current logging implementation
     /// </summary>
-    void Log(object @object);
+    ILogger Logger { get; }
 }

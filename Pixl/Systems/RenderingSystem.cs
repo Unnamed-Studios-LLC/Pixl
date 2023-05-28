@@ -55,29 +55,16 @@ public sealed class RenderingSystem : ComponentSystem
             WorldToClipMatrix?.Set(worldToClip);
 
             var game = Game.Current;
-            Texture2d texture = game.Graphics.NullTexture2d;
-            renderer.BeginBatch(Material, texture);
+            renderer.BeginBatch(Material);
             Scene.Entities.ForEach((ref Sprite sprite, ref Transform transform) =>
             {
-                if (sprite.TextureId != texture.Id)
-                {
-                    if (!game.Resources.TryGet(sprite.TextureId, out var resource) ||
-                        resource is not Texture2d spriteTexture)
-                    {
-                        spriteTexture = game.Graphics.NullTexture2d;
-                    }
-
-                    if (spriteTexture != texture)
-                    {
-                        texture = spriteTexture;
-                        renderer.BeginBatch(Material, texture);
-                    }
-                }
+                renderer.SetTexture(sprite.TextureId);
 
                 // clockwise quad vertices
                 Vec3 min = sprite.Rect.Min;
                 Vec3 max = sprite.Rect.Max;
 
+                var texture = renderer.Texture;
                 var spriteMin = sprite.Rect.Min * texture.TexelSize;
                 var spriteMax = sprite.Rect.Max * texture.TexelSize;
 

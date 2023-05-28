@@ -1,102 +1,248 @@
 ﻿using ImGuiNET;
-using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Veldrid;
-using Vulkan;
 
 namespace Pixl.Editor;
 
-internal sealed class Gui : GraphicsResource
+internal sealed partial class Gui : GraphicsResource
 {
     private readonly Material _material;
+    private readonly Property _worldToClipMatrix;
+    private readonly Resources _resources;
+    private readonly Texture2d _nullTexture;
+
+    private DeviceBuffer? _indexBuffer;
+    private DeviceBuffer? _vertexBuffer;
 
     private nint? _context;
-    private CommandList? _commandList;
-    private DeviceBuffer? _vertexBuffer;
-    private DeviceBuffer? _indexBuffer;
+    private Texture2d? _fontTexture;
+    private Texture2d _mainTexture;
 
-    public Gui(AppWindow window, Material material)
+    public Gui(AppWindow window, Resources resources, DefaultResources defaultResources, EditorDefaultResources editorDefaultResources)
     {
         Window = window;
-        _material = material;
+        _resources = resources;
+        _material = editorDefaultResources.GuiMaterial;
+        _worldToClipMatrix = editorDefaultResources.WorldToClipMatrix;
+        _nullTexture = _mainTexture = defaultResources.NullTexture;
     }
 
+    public Vec2 RenderScale { get; set; } = Vec2.One;
     public AppWindow Window { get; }
+
+    public void Render(Graphics graphics, CommandList commands, Framebuffer frameBuffer)
+    {
+        commands.Begin();
+        commands.SetFramebuffer(frameBuffer);
+        //commands.ClearColorTarget(0, RgbaFloat.Black);
+        RenderImGui(graphics, commands, frameBuffer);
+        commands.End();
+        graphics.Submit(commands);
+    }
+
+    public void Start(Resources resources)
+    {
+        _context ??= ImGui.CreateContext();
+
+        var io = ImGui.GetIO();
+        io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
+        io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard |
+            ImGuiConfigFlags.DockingEnable;
+        io.Fonts.Flags |= ImFontAtlasFlags.NoBakedLines;
+
+        CreateFontTexture(resources);
+    }
+
+    public void Stop(Resources resources)
+    {
+        if (_context != null) ImGui.DestroyContext(_context.Value);
+        _context = null;
+
+        if (_fontTexture != null)
+        {
+            resources.Remove(_fontTexture);
+            _fontTexture = null;
+        }
+    }
 
     public void Update(float deltaTime, Span<WindowEvent> events)
     {
         UpdateImGui(deltaTime, events);
     }
 
-    public void Render(Graphics graphics, CommandList commands, Framebuffer frameBuffer)
+    private unsafe void CreateFontTexture(Resources resources)
     {
-        commands.Begin();
-        commands.SetFramebuffer(frameBuffer);
-        commands.ClearColorTarget(0, RgbaFloat.Black);
+        var io = ImGui.GetIO();
 
-        commands.SetFramebuffer(frameBuffer);
-        commands.SetIndexBuffer(_indexBuffer, IndexFormat.UInt16);
-        commands.SetVertexBuffer(0, _vertexBuffer);
-        commands.SetPipeline(_material.CreatePipeline(graphics, frameBuffer));
+        nint pixels;
+        Int2 size;
+        io.Fonts.GetTexDataAsRGBA32(out pixels, out size.X, out size.Y, out var bytesPerPixel);
 
-        uint slot = 0;
-        foreach (var resourceSet in _material.CreateResourceSets(graphics))
+        var texture = new Texture2d(size, SampleMode.Point, ColorFormat.Rgba32);
+
+        var pixelSpan = new Span<byte>(pixels.ToPointer(), bytesPerPixel * size.X * size.Y);
+        var textureData = texture.GetData();
+        pixelSpan.CopyTo(textureData);
+        texture.Apply();
+        resources.Add(texture);
+
+        _fontTexture = texture;
+        io.Fonts.SetTexID((nint)texture.Id);
+        io.Fonts.ClearTexData();
+    }
+
+    private void RenderImGui(Graphics graphics, CommandList commandList, Framebuffer framebuffer)
+    {
+        ImGui.Render();
+
+        var drawData = ImGui.GetDrawData();
+        if (drawData.CmdListsCount == 0) return;
+
+        ResizeBuffers(graphics, drawData);
+        UpdateBuffers(commandList, drawData);
+
+        commandList.SetFramebuffer(framebuffer);
+        commandList.SetIndexBuffer(_indexBuffer, IndexFormat.UInt16);
+        commandList.SetVertexBuffer(0, _vertexBuffer);
+
+        _mainTexture = _fontTexture ?? _nullTexture;
+        _material.MainTextureProperty?.Set(_mainTexture);
+        commandList.SetMaterial(_material, framebuffer, graphics);
+
+        var io = ImGui.GetIO();
+        var projectionMatrix = Matrix4x4.Orthographic(
+            0,
+            io.DisplaySize.X,
+            io.DisplaySize.Y,
+            0,
+            -1, 1);
+
+        _worldToClipMatrix.Set(projectionMatrix);
+        drawData.ScaleClipRects(io.DisplayFramebufferScale);
+
+        var indexOffset = 0;
+        var vertexOffset = 0;
+        for (int i = 0; i < drawData.CmdListsCount; i++)
         {
-            commands.SetGraphicsResourceSet(slot++, resourceSet);
+            var cmdList = drawData.CmdListsRange[i];
+            RenderImGuiDrawList(cmdList, commandList, graphics, framebuffer, indexOffset, vertexOffset);
+            indexOffset += cmdList.IdxBuffer.Size;
+            vertexOffset += cmdList.VtxBuffer.Size;
+        }
+    }
+
+    private unsafe void RenderImGuiDrawList(ImDrawListPtr drawList, CommandList commandList, Graphics graphics, Framebuffer frameBuffer, int indexOffset, int vertexOffset)
+    {
+        for (int i = 0; i < drawList.CmdBuffer.Size; i++)
+        {
+            var drawCommand = drawList.CmdBuffer[i];
+            if (drawCommand.UserCallback != IntPtr.Zero) continue; // not implemented, also i don't know what to implement :D
+
+            // sync texture
+            var textureId = (uint)drawCommand.TextureId.ToInt64();
+            if (textureId != _mainTexture.Id)
+            {
+                if (_resources.TryGet(textureId, out var resource) &&
+                    resource is Texture2d resourceTexture)
+                {
+                    _mainTexture = resourceTexture;
+                }
+                else
+                {
+                    _mainTexture = _nullTexture;
+                }
+
+                _material.MainTextureProperty?.Set(_mainTexture);
+                commandList.SetMaterial(_material, frameBuffer, graphics);
+            }
+
+            commandList.SetScissorRect(0,
+                (uint)drawCommand.ClipRect.X,
+                (uint)drawCommand.ClipRect.Y,
+                (uint)(drawCommand.ClipRect.Z - drawCommand.ClipRect.X),
+                (uint)(drawCommand.ClipRect.W - drawCommand.ClipRect.Y)
+            );
+
+            commandList.DrawIndexed(
+                drawCommand.ElemCount,
+                1,
+                drawCommand.IdxOffset + (uint)indexOffset,
+                (int)drawCommand.VtxOffset + vertexOffset,
+                0
+            );
+        }
+    }
+
+    private void ResizeBuffers(Graphics graphics, ImDrawDataPtr drawData)
+    {
+        var totalIndexSize = (uint)(drawData.TotalIdxCount * sizeof(ushort));
+        var totalVertexSize = (uint)(drawData.TotalVtxCount * Unsafe.SizeOf<ImDrawVert>());
+        var device = graphics.Device;
+
+        if (_indexBuffer == null ||
+            totalIndexSize > _indexBuffer.SizeInBytes)
+        {
+            _indexBuffer?.Dispose();
+            var bufferDescription = new BufferDescription((uint)(totalIndexSize * 1.5f), BufferUsage.IndexBuffer | BufferUsage.Dynamic);
+            _indexBuffer = device.ResourceFactory.CreateBuffer(bufferDescription);
         }
 
-        commands.End();
-        graphics.Submit(commands);
+        if (_vertexBuffer == null ||
+            totalVertexSize > _vertexBuffer.SizeInBytes)
+        {
+            _vertexBuffer?.Dispose();
+            var bufferDescription = new BufferDescription((uint)(totalVertexSize * 1.5f), BufferUsage.VertexBuffer | BufferUsage.Dynamic);
+            _vertexBuffer = device.ResourceFactory.CreateBuffer(bufferDescription);
+        }
     }
 
-    internal override void OnCreate(Graphics graphics)
+    private unsafe void UpdateBuffers(CommandList commandList, ImDrawDataPtr drawData)
     {
-        base.OnCreate(graphics);
+        var indexOffset = 0;
+        var vertexOffset = 0;
 
-        _context = ImGui.CreateContext();
+        for (int i = 0; i < drawData.CmdListsCount; i++)
+        {
+            var drawList = drawData.CmdListsRange[i];
 
-        var factory = graphics.ResourceFactory;
-        _commandList = factory.CreateCommandList();
-        _commandList.Name = "Pixl Gui Command List";
+            // update index buffer
+            commandList.UpdateBuffer(
+                _indexBuffer,
+                (uint)indexOffset * sizeof(ushort),
+                drawList.IdxBuffer.Data,
+                (uint)(drawList.IdxBuffer.Size * sizeof(ushort))
+            );
 
-        _vertexBuffer = factory.CreateBuffer(new BufferDescription(10000, BufferUsage.VertexBuffer | BufferUsage.Dynamic));
-        _vertexBuffer.Name = "Pixl Gui Vertex Buffer";
-        _indexBuffer = factory.CreateBuffer(new BufferDescription(2000, BufferUsage.IndexBuffer | BufferUsage.Dynamic));
-        _indexBuffer.Name = "Pixl Gui Index Buffer";
-    }
+            // update vertex buffer
+            commandList.UpdateBuffer(
+                _vertexBuffer,
+                (uint)(vertexOffset * Unsafe.SizeOf<ImDrawVert>()),
+                drawList.VtxBuffer.Data,
+                (uint)(drawList.VtxBuffer.Size * Unsafe.SizeOf<ImDrawVert>())
+            );
 
-    internal override void OnDestroy(Graphics graphics)
-    {
-        base.OnDestroy(graphics);
-
-        if (_context != null) ImGui.DestroyContext(_context.Value);
-        _context = null;
-
-        _commandList?.Dispose();
-        _commandList = null;
-
-        _vertexBuffer?.Dispose();
-        _vertexBuffer = null;
-        _indexBuffer?.Dispose();
-        _indexBuffer = null;
+            indexOffset += drawList.IdxBuffer.Size;
+            vertexOffset += drawList.VtxBuffer.Size;
+        }
     }
 
     private void UpdateImGui(float deltaTime, Span<WindowEvent> events)
     {
-        var mousePosition = Window.MousePosition;
         var windowSize = Window.Size;
+        var mousePosition = Window.MousePosition;
+        mousePosition.Y = windowSize.Y - mousePosition.Y - 1;
 
         // set frame variables
         var io = ImGui.GetIO();
-        io.DisplaySize = new Vector2(windowSize.X, windowSize.Y);
-        io.DisplayFramebufferScale = Vector2.One;
+        io.DisplaySize = new Vector2(windowSize.X / RenderScale.X, windowSize.Y / RenderScale.Y);
+        io.DisplayFramebufferScale = new Vector2(RenderScale.X, RenderScale.Y);
         io.DeltaTime = deltaTime;
         io.AddMousePosEvent(mousePosition.X, mousePosition.Y);
 
         // set input events
-        foreach (ref var @event in events)
-        {
+        ProcessInputEvents(events);
 
-        }
+        ImGui.NewFrame();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Pixl;
+using Pixl.Demo;
 using Pixl.Editor;
 using Pixl.Win.Editor;
 using System;
@@ -6,21 +7,37 @@ using System.IO;
 
 try
 {
-    var window = new WinEditorWindow(new Int2(1000, 800));
-    var player = new WinEditorPlayer();
     var resources = new Resources();
     var graphics = new Graphics();
 
-    graphics.Start(resources, window, GraphicsApi.DirectX);
+    var editorWindow = new WinEditorWindow(new Int2(1000, 800));
+    var editorPlayer = new WinEditorPlayer();
 
-    var editor = new Editor(resources, graphics, window);
-    window.OnRender += editor.Update;
+    graphics.Start(resources, editorWindow, GraphicsApi.DirectX);
 
-    window.Run();
+#if DEBUG
+    var logger = new BroadcastLogger(editorPlayer.MemoryLogger, new DiagnosticsLogger());
+#else
+    var logger = editorPlayer.MemoryLogger;
+#endif
+
+    //var gameWindow = new EditorGameWindow(editorWindow.SwapchainSource, "Pixl Game");
+    var gamePlayer = new EditorGamePlayer(editorWindow, logger);
+
+    var game = new Game(resources, graphics, gamePlayer, new Entry());
+    var editor = new Editor(resources, graphics, editorWindow, game);
+    editorWindow.OnRender += editor.Update;
+
+    game.Start();
+    editor.Start();
+    editorWindow.Run();
+    editor.Stop();
+    game.Stop();
 
     graphics.Stop(resources);
 
-    return player.ExitCode;
+    editorPlayer.Logger.Flush();
+    return editorPlayer.ExitCode;
 }
 catch (Exception e)
 {

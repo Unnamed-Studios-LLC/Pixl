@@ -11,4 +11,13 @@ public static class KeyHelper
             _ => KeyCode.None
         };
     }
+
+    public static KeyCode GetKeyCodeForMouseIndex(int mouseIndex)
+    {
+        return mouseIndex switch
+        {
+            >= 0 and < 7 => KeyCode.Mouse0 + mouseIndex,
+            _ => KeyCode.None
+        };
+    }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Pixl.Demo\Pixl.Demo.csproj" />
     <ProjectReference Include="..\Pixl.Editor\Pixl.Editor.csproj" />
     <ProjectReference Include="..\Pixl.Win\Pixl.Win.csproj" />
   </ItemGroup>

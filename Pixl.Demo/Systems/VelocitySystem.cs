@@ -104,22 +104,6 @@ namespace Pixl.Demo.Systems
             CreateEntities(10_000);
         }
 
-        public override void OnFixedUpdate()
-        {
-            var total = Time.FixedTotal;
-            Scene.Entities.ParallelForEach((ref Velocity velocity) =>
-            {
-                var timeStep = total - velocity.Time;
-                velocity.Position += velocity.Vector * timeStep * SpeedScalar;
-                velocity.Time = total;
-            });
-        }
-
-        public override void OnRegisterEvents()
-        {
-            RegisterEvent<Velocity>(Event.OnAdd, OnAdd);
-        }
-
         public override void OnLateUpdate()
         {
             if (Scene == null) return;
@@ -128,8 +112,7 @@ namespace Pixl.Demo.Systems
             var delta = Time.UpdateDelta;
             Scene.Entities.ParallelForEach((ref Transform transform, ref Velocity velocity) =>
             {
-                var timeStep = total - velocity.Time;
-                transform.Position = velocity.Position + velocity.Vector * timeStep * SpeedScalar;
+                transform.Position += velocity.Vector * delta * SpeedScalar;
                 if (velocity.Vector.X > 0 && transform.Position.X > 100) velocity.Vector.X *= -1;
                 if (velocity.Vector.X < 0 && transform.Position.X < -100) velocity.Vector.X *= -1;
                 if (velocity.Vector.Y > 0 && transform.Position.Y > 100) velocity.Vector.Y *= -1;
@@ -142,15 +125,6 @@ namespace Pixl.Demo.Systems
                 _fps = fps;
                 UpdateTitle();
             }
-        }
-
-        private void OnAdd(uint entityId, ref Velocity velocity)
-        {
-            if (Scene == null) return;
-            ref var transform = ref Scene.Entities.TryGetComponent<Transform>(entityId, out var found);
-            if (!found) return;
-            velocity.Position = (Vec2)transform.Position;
-            velocity.Time = Time.Total;
         }
 
         private void UpdateTitle()

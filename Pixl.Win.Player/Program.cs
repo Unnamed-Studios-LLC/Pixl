@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Threading;
 
+string crashPath = "crash.log";
 try
 {
     WinWindow window = new("Pixl Game", new Int2(1000, 800));
@@ -13,6 +14,7 @@ try
     Resources resources = new();
     Graphics graphics = new();
 
+    crashPath = Path.Combine(player.DataPath, crashPath);
     graphics.Start(resources, window, GraphicsApi.DirectX);
 
     var game = new Game(resources, graphics, player, new Entry());
@@ -24,11 +26,12 @@ try
     gameThread.Join();
     graphics.Stop(resources);
 
+    player.Logger.Flush();
     return player.ExitCode;
 }
 catch (Exception e)
 {
-    File.WriteAllText("crash.log", e.ToString());
+    File.WriteAllText(crashPath, e.ToString());
     return 1;
 }
 

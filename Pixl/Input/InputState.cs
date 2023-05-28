@@ -2,7 +2,7 @@
 
 internal sealed class InputState
 {
-    private readonly KeyRecord[] _keys = new KeyRecord[(int)KeyCode.NumPad0];
+    private readonly KeyRecord[] _keys = new KeyRecord[(int)KeyCode.Count];
 
     public ref KeyRecord GetKeyRecord(KeyCode keyCode) => ref _keys[(int)keyCode - 1];
 
