@@ -5,13 +5,16 @@ namespace Pixl;
 public sealed class RenderTexture : GraphicsResource
 {
     private Texture? _depthTexture;
-    private Texture? _colorTexture;
 
-    public RenderTexture(Int2 size)
+    public RenderTexture(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
     {
         if (size.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(size));
         if (size.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(size));
         Size = size;
+        ColorTexture = new Texture2d(size, sampleMode, colorFormat, false)
+        {
+            IsRenderTarget = true
+        };
     }
 
     /// <summary>
@@ -19,6 +22,7 @@ public sealed class RenderTexture : GraphicsResource
     /// </summary>
     public Int2 Size { get; }
 
+    internal Texture2d ColorTexture { get; }
     internal Framebuffer? Framebuffer { get; private set; }
 
     internal override void OnCreate(Graphics graphics)
@@ -29,10 +33,9 @@ public sealed class RenderTexture : GraphicsResource
         var depthTextureDescription = new TextureDescription((uint)Size.X, (uint)Size.Y, 1, 1, 1, PixelFormat.R32_Float, TextureUsage.DepthStencil, TextureType.Texture2D);
         _depthTexture = factory.CreateTexture(depthTextureDescription);
 
-        var colorTextureDescription = new TextureDescription((uint)Size.X, (uint)Size.Y, 1, 1, 1, PixelFormat.R32_G32_B32_A32_Float, TextureUsage.RenderTarget, TextureType.Texture2D);
-        _colorTexture = factory.CreateTexture(colorTextureDescription);
+        ColorTexture.Create(graphics);
 
-        var framebufferDescription = new FramebufferDescription(_depthTexture, _colorTexture);
+        var framebufferDescription = new FramebufferDescription(_depthTexture, ColorTexture.Texture);
         Framebuffer = factory.CreateFramebuffer(framebufferDescription);
     }
 
@@ -43,8 +46,7 @@ public sealed class RenderTexture : GraphicsResource
         _depthTexture?.Dispose();
         _depthTexture = null;
 
-        _colorTexture?.Dispose();
-        _colorTexture = null;
+        ColorTexture.Destroy();
 
         Framebuffer?.Dispose();
         Framebuffer = null;

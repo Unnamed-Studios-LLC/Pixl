@@ -8,5 +8,7 @@ internal enum WindowEventType
     KeyUp,
     Render,
     MouseMove,
-    Character
+    Character,
+    Scroll,
+    Timer
 }

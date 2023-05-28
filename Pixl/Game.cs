@@ -174,7 +174,15 @@ namespace Pixl
             if (!Graphics.Setup) return;
 
             // sync size
-            Graphics.UpdateWindowSize(Player.Window.Size);
+            if (TargetRenderTexture == null)
+            {
+                Graphics.UpdateWindowSize(Player.Window.Size);
+            }
+            else if (TargetRenderTexture.Framebuffer == null)
+            {
+                // render texture is not null and frame buffer is null, unknown error
+                return;
+            }
 
             var commands = Graphics.Commands;
             var frameBuffer = TargetRenderTexture?.Framebuffer ?? Graphics.SwapchainFramebuffer;

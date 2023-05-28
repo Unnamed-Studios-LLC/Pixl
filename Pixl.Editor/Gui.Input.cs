@@ -19,7 +19,7 @@ internal sealed partial class Gui
 		};
 	}
 
-	private static void ProcessInputEvents(Span<WindowEvent> events)
+	private static unsafe void ProcessInputEvents(Span<WindowEvent> events)
 	{
 		var io = ImGui.GetIO();
 		foreach (ref var @event in events)
@@ -31,6 +31,11 @@ internal sealed partial class Gui
 					break;
 				case WindowEventType.KeyUp:
 					OnKey(in io, in @event, false);
+					break;
+				case WindowEventType.Scroll:
+					var deltaXBits = @event.ValueA;
+					var deltaYBits = @event.ValueB;
+					io.AddMouseWheelEvent(*(float*)&deltaXBits, *(float*)&deltaYBits);
 					break;
 			}
 		}

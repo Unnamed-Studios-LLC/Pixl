@@ -7,11 +7,9 @@ namespace Pixl;
 
 public sealed class Texture2d : GraphicsResource
 {
-    private Texture? _texture;
-    private TextureView? _textureView;
     private readonly byte[]? _data;
 
-    internal Texture2d(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
+    internal Texture2d(Int2 size, SampleMode sampleMode, ColorFormat colorFormat, bool readWrite)
     {
         if (size.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(size));
         if (size.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(size));
@@ -22,13 +20,17 @@ public sealed class Texture2d : GraphicsResource
         ColorFormat = colorFormat;
 
         var pixelByteSize = GetPixelByteSize(colorFormat);
-        _data = new byte[size.X * size.Y * pixelByteSize];
+        _data = readWrite ? new byte[size.X * size.Y * pixelByteSize] : null;
     }
 
     public Int2 Size { get; }
     public Vec2 TexelSize { get; }
     public SampleMode SampleMode { get; set; }
     public ColorFormat ColorFormat { get; }
+
+    internal bool IsRenderTarget { get; set; }
+    internal Texture? Texture { get; private set; }
+    internal TextureView? TextureView { get; private set; }
 
     /// <summary>
     /// Creates a <see cref="Texture2d"/>. <inheritdoc cref="Application.RequireMainThread"/>
@@ -40,7 +42,7 @@ public sealed class Texture2d : GraphicsResource
     public static Texture2d Create(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
     {
         Application.RequireMainThread();
-        var texture2d = new Texture2d(size, sampleMode, colorFormat);
+        var texture2d = new Texture2d(size, sampleMode, colorFormat, true);
         var resources = Game.Current.Resources;
         resources.Add(texture2d);
         return texture2d;
@@ -99,8 +101,8 @@ public sealed class Texture2d : GraphicsResource
 
     internal IEnumerable<BindableResource> GetBindableResources(Graphics graphics)
     {
-        if (_textureView == null) throw new Exception($"{nameof(_textureView)} is null!");
-        yield return _textureView;
+        if (TextureView == null) throw new Exception($"{nameof(TextureView)} is null!");
+        yield return TextureView;
         yield return graphics.GetSampler(SampleMode);
     }
 
@@ -110,11 +112,12 @@ public sealed class Texture2d : GraphicsResource
 
         var factory = graphics.ResourceFactory;
         var pixelFormat = GetPixelFormat(ColorFormat);
-        var textureDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, pixelFormat, TextureUsage.Sampled);
-        _texture = factory.CreateTexture(ref textureDescription);
+        var textureUsage = GetTextureUsage();
+        var textureDescription = TextureDescription.Texture2D((uint)Size.X, (uint)Size.Y, 1, 1, pixelFormat, textureUsage);
+        Texture = factory.CreateTexture(ref textureDescription);
 
-        var textureViewDescription = new TextureViewDescription(_texture);
-        _textureView = factory.CreateTextureView(ref textureViewDescription);
+        var textureViewDescription = new TextureViewDescription(Texture);
+        TextureView = factory.CreateTextureView(ref textureViewDescription);
 
         UpdateTexture(graphics);
     }
@@ -123,17 +126,17 @@ public sealed class Texture2d : GraphicsResource
     {
         base.OnDestroy(graphics);
 
-        _texture?.Dispose();
-        _texture = null;
+        Texture?.Dispose();
+        Texture = null;
 
-        _textureView?.Dispose();
-        _textureView = null;
+        TextureView?.Dispose();
+        TextureView = null;
     }
 
     private static Texture2d LoadFromFile<T>(Stream fileStream, SampleMode sampleMode, ColorFormat colorFormat) where T : unmanaged, IPixel<T>
     {
         var image = Image.Load<T>(fileStream);
-        var texture2d = new Texture2d(new Int2(image.Size.Width, image.Size.Height), sampleMode, colorFormat);
+        var texture2d = new Texture2d(new Int2(image.Size.Width, image.Size.Height), sampleMode, colorFormat, true);
         image.CopyPixelDataTo(texture2d.GetData());
         return texture2d;
     }
@@ -156,10 +159,18 @@ public sealed class Texture2d : GraphicsResource
         };
     }
 
+    private TextureUsage GetTextureUsage()
+    {
+        var usage = TextureUsage.Sampled;
+        if (IsRenderTarget) usage |= TextureUsage.RenderTarget;
+        return usage;
+    }
+
     private static Exception ReadWriteDisabledException() => new("Reading or writing this texture's data is not supported");
 
     private void UpdateTexture(Graphics graphics)
     {
-        graphics.Device.UpdateTexture(_texture, _data, 0, 0, 0, (uint)Size.X, (uint)Size.Y, 1, 0, 0);
+        if (_data == null) return;
+        graphics.Device.UpdateTexture(Texture, _data, 0, 0, 0, (uint)Size.X, (uint)Size.Y, 1, 0, 0);
     }
 }

@@ -1,26 +1,35 @@
-﻿using Veldrid;
+﻿using ImGuiNET;
+using System.Numerics;
+using Veldrid;
 
 namespace Pixl.Editor
 {
     internal class EditorGameWindow : AppWindow
     {
-        private Int2 _mousePosition;
+        private readonly AppWindow _editorWindow;
 
-        public EditorGameWindow(SwapchainSource swapchainSource, string title)
+        public EditorGameWindow(AppWindow mainWindow, string title, Int2 size)
         {
-            SwapchainSource = swapchainSource;
+            _editorWindow = mainWindow;
             Title = title;
+            Size = size;
         }
 
         public override Int2 Size { get; set; }
-        public override Int2 MousePosition => _mousePosition;
+        public override Int2 MousePosition => _editorWindow.MousePosition;
         public override WindowStyle Style { get; set; }
-        public override SwapchainSource SwapchainSource { get; }
+        public override SwapchainSource SwapchainSource => _editorWindow.SwapchainSource;
         public override string Title { get; set; }
+        public RenderTexture? RenderTexture { get; set; }
 
-        public void SetMousePosition(Int2 mousePosition)
+        public void SubmitUI()
         {
-            _mousePosition = mousePosition;
+            ImGui.Begin("Game");
+            if (RenderTexture != null)
+            {
+                ImGui.Image((nint)RenderTexture.Id, new Vector2(Size.X, Size.Y));
+            }
+            ImGui.End();
         }
     }
 }

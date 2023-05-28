@@ -19,7 +19,7 @@ public sealed class Property : GraphicsResource
     internal GraphicsResource? BackingResource { get; private set; }
     internal PropertyBackingType BackingType { get; }
 
-    private Texture2d? Texture2d => BackingResource as Texture2d;
+    private Texture2d? Texture2d => GetTexture2d();
     private Uniform? Uniform => BackingResource as Uniform;
 
     public unsafe void Set<T>(T value) where T : unmanaged => Set(ref value);
@@ -35,11 +35,18 @@ public sealed class Property : GraphicsResource
         BackingResource = texture2d ?? throw new ArgumentNullException(nameof(texture2d));
     }
 
+    public void Set(RenderTexture renderTexture)
+    {
+        AssertTexture2d();
+        BackingResource = renderTexture ?? throw new ArgumentNullException(nameof(renderTexture));
+    }
+
     internal IEnumerable<BindableResource> GetBindableResources(Graphics graphics)
     {
         if (BackingResource == null) return Array.Empty<BindableResource>();
         return BackingResource switch
         {
+            RenderTexture renderTexture => renderTexture.ColorTexture.GetBindableResources(graphics),
             Texture2d texture2d => texture2d.GetBindableResources(graphics),
             Uniform uniform => uniform.GetBindableResources(),
             _ => throw new Exception($"{BackingResource.GetType()} is missing a {nameof(BindableResource)} switch case in {nameof(GetBindableResources)}"),
@@ -67,10 +74,9 @@ public sealed class Property : GraphicsResource
     {
         base.OnCreate(graphics);
 
-        switch (Descriptor.Type)
+        switch (BackingType)
         {
-            case PropertyType.Custom:
-            case PropertyType.Mat4:
+            case PropertyBackingType.Uniform:
                 Uniform?.Create(graphics);
                 break;
         }
@@ -80,10 +86,9 @@ public sealed class Property : GraphicsResource
     {
         base.OnDestroy(graphics);
 
-        switch (Descriptor.Type)
+        switch (BackingType)
         {
-            case PropertyType.Custom:
-            case PropertyType.Mat4:
+            case PropertyBackingType.Uniform:
                 Uniform?.Destroy();
                 break;
         }
@@ -108,5 +113,11 @@ public sealed class Property : GraphicsResource
     private void AssertUniform()
     {
         if (BackingType != PropertyBackingType.Uniform) throw new Exception($"Property type of {Descriptor.Type} is not a {nameof(Pixl.Uniform)} type");
+    }
+
+    private Texture2d? GetTexture2d()
+    {
+        if (BackingResource is RenderTexture renderTexture) return renderTexture.ColorTexture;
+        return BackingResource as Texture2d;
     }
 }

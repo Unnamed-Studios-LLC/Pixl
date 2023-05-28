@@ -25,7 +25,7 @@ internal sealed class DefaultResources
 
     private static Texture2d CreateNullTexture()
     {
-        var nullTexture = new Texture2d(new Int2(1, 1), SampleMode.Point, ColorFormat.Rgba32);
+        var nullTexture = new Texture2d(new Int2(1, 1), SampleMode.Point, ColorFormat.Rgba32, true);
         nullTexture.GetData<Color32>()[0] = Color32.White;
         return nullTexture;
     }

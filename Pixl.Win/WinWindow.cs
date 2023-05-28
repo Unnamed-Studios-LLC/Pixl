@@ -5,7 +5,6 @@ using Veldrid;
 using WinApi.Gdi32;
 using WinApi.Kernel32;
 using WinApi.User32;
-using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]
 [assembly: InternalsVisibleTo("Pixl.Win.Player")]
@@ -14,6 +13,8 @@ namespace Pixl.Win;
 
 internal class WinWindow : AppWindow
 {
+    private const int TimerId = 1;
+
     private readonly IntPtr _instanceHandle;
     private readonly IntPtr _hwnd;
     private readonly WindowProc _windowProc;
@@ -67,6 +68,7 @@ internal class WinWindow : AppWindow
     }
 
     public int ExitCode { get; set; }
+    public bool Timer { get; set; } = false;
 
     public override Int2 MousePosition => GetMousePosition();
 
@@ -166,6 +168,15 @@ internal class WinWindow : AppWindow
         PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
     }
 
+    private unsafe void OnMouseWheel(long wParam, long lParam)
+    {
+        var delta = (int)(wParam & 0xffff0000) >> 16;
+        if (delta == 0) return;
+        var deltaF = (float)delta;
+        var deltaFBits = (int*)&deltaF;
+        PushEvent(new WindowEvent(WindowEventType.Scroll, 0, *deltaFBits));
+    }
+
     private void OnSize(int action, int packedSize)
     {
         var updateSize = action switch
@@ -184,7 +195,8 @@ internal class WinWindow : AppWindow
     {
         if (_hwnd == hwnd)
         {
-            switch ((WM)umsg)
+            var wmg = (WM)umsg;
+            switch (wmg)
             {
                 case WM.CLOSE:
                     Stop();
@@ -227,6 +239,9 @@ internal class WinWindow : AppWindow
                     break;
                 case WM.MOUSEMOVE:
                     OnMouseMove();
+                    break;
+                case WM.MOUSEWHEEL:
+                    OnMouseWheel(wParam.ToInt64(), lParam.ToInt64());
                     break;
             }
         }

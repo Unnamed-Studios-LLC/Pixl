@@ -60,4 +60,19 @@ internal abstract class AppWindow
             _events.Add(@event);
         }
     }
+
+    /// <summary>
+    /// Push an event to the window
+    /// </summary>
+    /// <param name="event"></param>
+    public virtual void PushEvents(Span<WindowEvent> events)
+    {
+        lock (_eventLock)
+        {
+            foreach (ref var @event in events)
+            {
+                _events.Add(@event);
+            }
+        }
+    }
 }

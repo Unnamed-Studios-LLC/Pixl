@@ -35,7 +35,7 @@ internal sealed partial class Gui : GraphicsResource
     {
         commands.Begin();
         commands.SetFramebuffer(frameBuffer);
-        //commands.ClearColorTarget(0, RgbaFloat.Black);
+        commands.ClearColorTarget(0, RgbaFloat.Black);
         RenderImGui(graphics, commands, frameBuffer);
         commands.End();
         graphics.Submit(commands);
@@ -79,7 +79,7 @@ internal sealed partial class Gui : GraphicsResource
         Int2 size;
         io.Fonts.GetTexDataAsRGBA32(out pixels, out size.X, out size.Y, out var bytesPerPixel);
 
-        var texture = new Texture2d(size, SampleMode.Point, ColorFormat.Rgba32);
+        var texture = new Texture2d(size, SampleMode.Point, ColorFormat.Rgba32, true);
 
         var pixelSpan = new Span<byte>(pixels.ToPointer(), bytesPerPixel * size.X * size.Y);
         var textureData = texture.GetData();
@@ -143,10 +143,17 @@ internal sealed partial class Gui : GraphicsResource
             var textureId = (uint)drawCommand.TextureId.ToInt64();
             if (textureId != _mainTexture.Id)
             {
-                if (_resources.TryGet(textureId, out var resource) &&
-                    resource is Texture2d resourceTexture)
+                if (_resources.TryGet(textureId, out var resource))
                 {
-                    _mainTexture = resourceTexture;
+                    // TODO better standardize texture targets in a ITexture interface with a TargetTexture property
+                    if (resource is Texture2d resourceTexture)
+                    {
+                        _mainTexture = resourceTexture;
+                    }
+                    else if (resource is RenderTexture renderTexture)
+                    {
+                        _mainTexture = renderTexture.ColorTexture;
+                    }
                 }
                 else
                 {

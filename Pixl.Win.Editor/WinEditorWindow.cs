@@ -1,27 +1,21 @@
-﻿using System;
-
-namespace Pixl.Win.Editor;
+﻿namespace Pixl.Win.Editor;
 
 internal sealed class WinEditorWindow : WinWindow
 {
-    public event Action? OnRender;
-
     public WinEditorWindow(Int2 windowSize) : base("Pixl Editor", windowSize)
     {
     }
 
-    public override void PushEvent(in WindowEvent @event)
+    private static bool IsRenderableEvent(WindowEventType type)
     {
-        switch (@event.Type)
+        return type switch
         {
-            case WindowEventType.Render:
-                OnRender?.Invoke();
-                return;
-            case WindowEventType.MouseMove:
-                OnRender?.Invoke();
-                return;
-        }
-
-        base.PushEvent(@event);
+            WindowEventType.Render or
+            WindowEventType.MouseMove or
+            WindowEventType.KeyDown or
+            WindowEventType.KeyUp or
+            WindowEventType.Scroll => true,
+            _ => false
+        };
     }
 }
