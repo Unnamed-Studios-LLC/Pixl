@@ -153,6 +153,9 @@ namespace Pixl
                 case WindowEventType.KeyUp:
                     Input.OnKeyUp((KeyCode)@event.ValueA, Time);
                     break;
+                case WindowEventType.Unfocused:
+                    Input.Clear();
+                    break;
                 case WindowEventType.Quit:
                     return false;
             }

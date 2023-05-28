@@ -1,4 +1,5 @@
-﻿using Veldrid;
+﻿using System.Runtime.CompilerServices;
+using Veldrid;
 
 namespace Pixl;
 
@@ -11,6 +12,8 @@ public sealed class RenderTexture : GraphicsResource
         if (size.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(size));
         if (size.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(size));
         Size = size;
+        SampleMode = sampleMode;
+        ColorFormat = colorFormat;
         ColorTexture = new Texture2d(size, sampleMode, colorFormat, false)
         {
             IsRenderTarget = true
@@ -20,10 +23,27 @@ public sealed class RenderTexture : GraphicsResource
     /// <summary>
     /// The size of the texture
     /// </summary>
-    public Int2 Size { get; }
-
-    internal Texture2d ColorTexture { get; }
+    public Int2 Size { get; private set; }
+    public SampleMode SampleMode { get; }
+    public ColorFormat ColorFormat { get; }
+    internal Texture2d ColorTexture { get; private set; }
     internal Framebuffer? Framebuffer { get; private set; }
+
+    public void Resize(Int2 targetSize)
+    {
+        if (targetSize.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(targetSize));
+        if (targetSize.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(targetSize));
+        Size = targetSize;
+
+        var graphics = Graphics;
+        if (graphics != null) Destroy();
+        ColorTexture.Dispose();
+        ColorTexture = new Texture2d(targetSize, SampleMode, ColorFormat, false)
+        {
+            IsRenderTarget = true
+        };
+        if (graphics != null) Create(graphics);
+    }
 
     internal override void OnCreate(Graphics graphics)
     {

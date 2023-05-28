@@ -14,6 +14,7 @@ internal sealed class Editor
     private long _time;
     private long _deltaTime;
     private long _startTime;
+    private bool _gameFocused;
 
     public Editor(Resources resources, Graphics graphics, AppWindow window, Game game, EditorGameWindow gameWindow)
     {
@@ -40,9 +41,10 @@ internal sealed class Editor
     public bool Run()
     {
         var events = Window.DequeueEvents();
-        GameWindow.PushEvents(events); // propagate events to game window
-        if (!Game.Run()) return false;
         Update(events);
+        UpdateGame(events); // propagate events to game window
+        if (!Game.Run()) return false;
+        Render();
         return true;
     }
 
@@ -68,7 +70,6 @@ internal sealed class Editor
         UpdateTime();
         ProcessEvents(events);
         SubmitUi();
-        Render();
     }
 
     public void WaitForNextUpdate()
@@ -91,7 +92,6 @@ internal sealed class Editor
 
         var commands = Graphics.Commands;
         var frameBuffer = Graphics.SwapchainFramebuffer;
-        Game.Run();
         _gui.Render(Graphics, commands, frameBuffer);
         Graphics.SwapBuffers();
     }
@@ -105,7 +105,39 @@ internal sealed class Editor
         float framerate = ImGui.GetIO().Framerate;
         ImGui.Text($"Application average {1000.0f / framerate:0.##} ms/frame ({framerate:0.#} FPS)");
 
-        GameWindow.SubmitUI();
+        GameWindow.SubmitUi();
+    }
+
+    private void UpdateGame(Span<WindowEvent> events)
+    {
+        static bool shouldPropagateEvent(WindowEventType type)
+        {
+            return type switch
+            {
+                WindowEventType.KeyDown or
+                WindowEventType.KeyUp or
+                WindowEventType.MouseMove or
+                WindowEventType.Scroll or
+                WindowEventType.Character or
+                WindowEventType.Quit => true,
+                _ => false
+            };
+        }
+
+        var focused = GameWindow.Focused;
+        if (focused != _gameFocused)
+        {
+            GameWindow.PushEvent(new WindowEvent(focused ? WindowEventType.Focused : WindowEventType.Unfocused));
+            _gameFocused = focused;
+        }
+
+        if (!focused) return; // do not propagate if the game is unfocused
+
+        foreach (ref var @event in events)
+        {
+            if (!shouldPropagateEvent(@event.Type)) continue;
+            GameWindow.PushEvent(in @event);
+        }
     }
 
     private void UpdateTime()

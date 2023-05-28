@@ -4,6 +4,11 @@ internal sealed class InputState
 {
     private readonly KeyRecord[] _keys = new KeyRecord[(int)KeyCode.Count];
 
+    public void Clear()
+    {
+        Array.Clear(_keys);
+    }
+
     public ref KeyRecord GetKeyRecord(KeyCode keyCode) => ref _keys[(int)keyCode - 1];
 
     public void OnKeyDown(KeyCode keyCode, long time)

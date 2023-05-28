@@ -172,7 +172,7 @@ internal class WinWindow : AppWindow
     {
         var delta = (int)(wParam & 0xffff0000) >> 16;
         if (delta == 0) return;
-        var deltaF = (float)delta;
+        var deltaF = delta / 120f;
         var deltaFBits = (int*)&deltaF;
         PushEvent(new WindowEvent(WindowEventType.Scroll, 0, *deltaFBits));
     }
