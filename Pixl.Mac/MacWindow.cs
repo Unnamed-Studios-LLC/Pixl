@@ -23,6 +23,7 @@ internal class MacWindow : AppWindow, INSWindowDelegate
     private Int2 _clientSize;
     private WindowStyle _windowStyle;
     private string _windowTitle;
+    private Int2 _mousePosition;
 
     public MacWindow(string title, Int2 size)
 	{
@@ -41,14 +42,16 @@ internal class MacWindow : AppWindow, INSWindowDelegate
         _window.MovableByWindowBackground = true;
         _window.BackgroundColor = NSColor.Black;
         _window.Delegate = new WindowDelegate(this);
+        _window.AcceptsMouseMovedEvents = true;
         _window.MakeKeyAndOrderFront(null);
 
         SwapchainSource = SwapchainSource.CreateNSWindow(_window.Handle);
+        _mousePosition = _window.MouseLocationOutsideOfEventStream.ToInt2();
     }
 
     public int ExitCode { get; set; }
 
-    public override Int2 MousePosition => GetMousePosition();
+    public override Int2 MousePosition => _mousePosition;
 
     public override Int2 Size
     {
@@ -67,20 +70,17 @@ internal class MacWindow : AppWindow, INSWindowDelegate
         set => SetWindowTitle(value);
     }
 
-    private void SetWindowTitle(string value)
-    {
-        _windowTitle = value;
-        DispatchQueue.MainQueue.DispatchAsync(() =>
-        {
-            _window.Title = value;
-        });
-    }
-
     public NativeHandle Handle => NativeHandle.Zero;
 
     public void Dispose()
     {
 
+    }
+
+    public void OnMouseMove(NSEvent theEvent)
+    {
+        _mousePosition = theEvent.LocationInWindow.ToInt2();
+        Debug.Log(_mousePosition);
     }
 
     public void Stop()
@@ -96,9 +96,13 @@ internal class MacWindow : AppWindow, INSWindowDelegate
         _clientSize = clientSize.Size.ToInt2();
     }
 
-    private Int2 GetMousePosition()
+    private void SetWindowTitle(string value)
     {
-        return _window.MouseLocationOutsideOfEventStream.ToInt2();
+        _windowTitle = value;
+        DispatchQueue.MainQueue.DispatchAsync(() =>
+        {
+            _window.Title = value;
+        });
     }
 }
 

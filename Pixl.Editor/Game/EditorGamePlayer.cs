@@ -4,14 +4,17 @@ namespace Pixl.Editor;
 
 internal sealed class EditorGamePlayer : IPlayer
 {
-    public EditorGamePlayer(AppWindow window, ILogger logger)
+    private readonly IPlayer _editorPlayer;
+
+    public EditorGamePlayer(AppWindow window, IPlayer editorPlayer, ILogger logger)
     {
         Window = window;
         Logger = logger;
+        _editorPlayer = editorPlayer;
     }
 
     public int ExitCode { get; set; }
-    public string AssetsPath => "Assets";
+    public string AssetsPath => _editorPlayer.AssetsPath;
     public string DataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pixl Editor", "Company Name", "Product Name");
     public AppWindow Window { get; }
 

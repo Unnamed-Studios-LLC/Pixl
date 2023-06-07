@@ -31,7 +31,7 @@ namespace Pixl.Editor
         public RenderTexture? RenderTexture { get; set; }
         public bool Focused { get; private set; }
 
-        public void SubmitUi()
+        public void SubmitUI()
         {
             ImGui.Begin("Game");
             ImGui.SetWindowSize(new Vector2(_size.X, _size.Y), ImGuiCond.FirstUseEver);

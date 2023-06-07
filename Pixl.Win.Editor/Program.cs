@@ -24,7 +24,7 @@ try
 #endif
 
     var gameWindow = new EditorGameWindow(editorWindow, "Pixl Game", new Int2(500, 500));
-    var gamePlayer = new EditorGamePlayer(gameWindow, logger);
+    var gamePlayer = new EditorGamePlayer(gameWindow, editorPlayer, logger);
 
     var game = new Game(resources, graphics, gamePlayer, new Entry());
     var editor = new Editor(resources, graphics, editorWindow, game, gameWindow);
@@ -45,6 +45,7 @@ catch (Exception e)
     File.WriteAllText("crash.log", e.ToString());
     return 1;
 }
+
 static void runEditor(WinWindow window, Editor editor, Game game, Graphics graphics)
 {
     game.Start();

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <_PostProcessingItem Include="Pixl.Mac.Player.app/Contents/MacOS/Pixl.Mac.Player">
+      <BCSymbolMapName>Pixl.Mac.Player.bcsymbolmap</BCSymbolMapName>
+      <NoDSymUtil>true</NoDSymUtil>
+      <dSYMSourcePathExists>false</dSYMSourcePathExists>
+      <NoSymbolStrip>true</NoSymbolStrip>
+      <dSYMInfoPlistRelativePath>Pixl.Mac.Player.app.dSYM\Contents\Info.plist</dSYMInfoPlistRelativePath>
+      <SymbolFile>/Users/tuckerulrich/Documents/UnnamedStudios/Pixl/Pixl.Mac.Player/obj/Debug/mtouch-symbols.list</SymbolFile>
+      <DSymName>Pixl.Mac.Player.app.dSYM</DSymName>
+      <SourceProjectPath>/Users/tuckerulrich/Documents/UnnamedStudios/Pixl/Pixl.Mac.Player</SourceProjectPath>
+    </_PostProcessingItem>
+  </ItemGroup>
+</Project>

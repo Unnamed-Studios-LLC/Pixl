@@ -1,8 +1,11 @@
 ﻿global using System;
 using ImGuiNET;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Pixl.Mac.Editor")]
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]
 
 namespace Pixl.Editor;
@@ -11,6 +14,7 @@ internal sealed class Editor
 {
     private readonly Gui _gui;
     private readonly RenderTexture _gameRenderTexture;
+    private readonly EditorWindows _windows;
     private long _time;
     private long _deltaTime;
     private long _startTime;
@@ -29,6 +33,7 @@ internal sealed class Editor
         _gameRenderTexture = new RenderTexture(gameWindow.Size, SampleMode.Point, ColorFormat.Rgba32);
         Game.TargetRenderTexture = _gameRenderTexture;
         gameWindow.RenderTexture = _gameRenderTexture;
+        _windows = new(gameWindow);
     }
 
     public EditorDefaultResources DefaultResources { get; }
@@ -69,7 +74,8 @@ internal sealed class Editor
     {
         UpdateTime();
         ProcessEvents(events);
-        SubmitUi();
+        
+        SubmitUI();
     }
 
     public void WaitForNextUpdate()
@@ -93,19 +99,20 @@ internal sealed class Editor
         var commands = Graphics.Commands;
         var frameBuffer = Graphics.SwapchainFramebuffer;
         _gui.Render(Graphics, commands, frameBuffer);
-        Graphics.SwapBuffers();
     }
 
-    private void SubmitUi()
+    private void SubmitUI()
     {
+        _windows.SubmitUI();
+
+        ImGui.Begin("Test");
         ImGui.Text("Hello, world!");
         ImGui.Text($"Mouse position: {ImGui.GetMousePos()}");
         ImGui.SameLine(0, -1);
 
         float framerate = ImGui.GetIO().Framerate;
         ImGui.Text($"Application average {1000.0f / framerate:0.##} ms/frame ({framerate:0.#} FPS)");
-
-        GameWindow.SubmitUi();
+        ImGui.End();
     }
 
     private void UpdateGame(Span<WindowEvent> events)

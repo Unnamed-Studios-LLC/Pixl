@@ -10,6 +10,8 @@ internal sealed class MacGamePlayer : IPlayer
 	{
 		Window = window;
 
+        Logger = new DiagnosticsLogger();
+
         var mainBundle = CFBundle.GetMain();
         var resourcesPath = mainBundle?.ResourcesDirectoryUrl?.AbsoluteUrl?.ToString();
         if (resourcesPath == null) throw new Exception("Unable to determin resource path");
@@ -24,10 +26,6 @@ internal sealed class MacGamePlayer : IPlayer
 
     public string DataPath => throw new NotImplementedException();
     public string AssetsPath { get; }
-
-    public void Log(object @object)
-    {
-        System.Diagnostics.Debug.WriteLine(@object);
-    }
+    public ILogger Logger { get; }
 }
 
