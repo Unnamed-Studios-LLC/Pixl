@@ -1,6 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <_MainLinkWith Include="/usr/local/share/dotnet/packs/Microsoft.macOS.Runtime.osx-x64/13.3.7060/runtimes/osx-x64/native/Microsoft.macOS.registrar.coreclr.a" />
-  </ItemGroup>
-</Project>
