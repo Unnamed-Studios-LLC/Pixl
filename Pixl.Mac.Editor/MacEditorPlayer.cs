@@ -8,7 +8,7 @@ internal sealed class MacEditorPlayer : IPlayer
 {
 	public MacEditorPlayer()
     {
-        MemoryLogger = new(8388608, 4096); // 8 MB
+        MemoryLogger = new(1100, 100);
 
         var mainBundle = CFBundle.GetMain();
         var resourcesPath = mainBundle?.ResourcesDirectoryUrl?.AbsoluteUrl?.ToString();

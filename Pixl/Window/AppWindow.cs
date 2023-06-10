@@ -20,6 +20,11 @@ internal abstract class AppWindow
     public abstract Int2 MousePosition { get; }
 
     /// <summary>
+    /// The current state of the cursor
+    /// </summary>
+    public abstract CursorState CursorState { get; set; }
+
+    /// <summary>
     /// The position on the window relative to the bottom-left corner of the display
     /// </summary>
     //public abstract Int2 Position { get; }

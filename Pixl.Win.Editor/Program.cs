@@ -17,17 +17,13 @@ try
 
     graphics.Start(resources, editorWindow, GraphicsApi.DirectX);
 
-#if DEBUG
-    var logger = new BroadcastLogger(editorPlayer.MemoryLogger, new DiagnosticsLogger());
-#else
     var logger = editorPlayer.MemoryLogger;
-#endif
 
-    var gameWindow = new EditorGameWindow(editorWindow, "Pixl Game", new Int2(500, 500));
+    var gameWindow = new GameWindow(editorWindow, "Pixl Game", new Int2(500, 500));
     var gamePlayer = new EditorGamePlayer(gameWindow, editorPlayer, logger);
 
     var game = new Game(resources, graphics, gamePlayer, new Entry());
-    var editor = new Editor(resources, graphics, editorWindow, game, gameWindow);
+    var editor = new Editor(resources, graphics, editorWindow, game, gameWindow, editorPlayer.MemoryLogger);
 
     var gameThread = new Thread(() => runEditor(editorWindow, editor, game, graphics));
     gameThread.Start();

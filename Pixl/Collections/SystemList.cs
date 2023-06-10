@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿namespace Pixl;
 
-namespace Pixl;
-
-internal class SystemList
+internal sealed class SystemList
 {
     private static readonly Type s_baseType = typeof(ComponentSystem);
 
@@ -16,7 +12,7 @@ internal class SystemList
 
     public void Add(ComponentSystem system)
     {
-        // TODO ensure main thread
+        Application.RequireMainThread();
         _systems.Add(system);
         _systems.Sort();
 

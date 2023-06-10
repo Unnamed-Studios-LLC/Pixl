@@ -13,7 +13,7 @@ public class AppDelegate : NSApplicationDelegate
     private MacEditorPlayer? _editorPlayer;
     private MacEditorWindow? _editorWindow;
     private EditorGamePlayer? _gamePlayer;
-    private EditorGameWindow? _gameWindow;
+    private GameWindow? _gameWindow;
     private Resources? _resources;
 	private Graphics? _graphics;
 	private Game? _game;
@@ -36,7 +36,7 @@ public class AppDelegate : NSApplicationDelegate
     var logger = editorPlayer.MemoryLogger;
 #endif
 
-        _gameWindow = new EditorGameWindow(_editorWindow, "Pixl Game", new Int2(500, 500));
+        _gameWindow = new GameWindow(_editorWindow, "Pixl Game", new Int2(500, 500));
         _gamePlayer = new EditorGamePlayer(_gameWindow, _editorPlayer, logger);
 
         _game = new Game(_resources, _graphics, _gamePlayer, new Entry());

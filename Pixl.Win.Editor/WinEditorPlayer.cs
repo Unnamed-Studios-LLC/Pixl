@@ -7,7 +7,7 @@ internal sealed class WinEditorPlayer : IPlayer
 {
     public WinEditorPlayer()
     {
-        MemoryLogger = new(8388608, 4096); // 8 MB
+        MemoryLogger = new(20000, 1000);
     }
 
     public int ExitCode { get; set; }

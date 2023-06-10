@@ -7,7 +7,7 @@ public sealed class CanvasSystem : ComponentSystem
 
     public CanvasSystem()
     {
-        Order = 1001;
+        Order = 1100;
 
         var resources = Game.Current.DefaultResources;
         Material = resources.DefaultMaterial;

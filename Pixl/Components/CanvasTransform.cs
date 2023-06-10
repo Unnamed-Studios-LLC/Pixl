@@ -9,6 +9,7 @@ public struct CanvasTransform
     public Vec2 Pivot;
     public Vec2 Anchor;
     public uint ParentId;
+    internal uint SyncedParentId;
 
     public CanvasTransform(Vec2 position, Vec3 rotation, Vec2 scale, Vec2 size, Vec2 pivot, Vec2 anchor, uint parentId)
     {

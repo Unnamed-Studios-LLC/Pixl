@@ -2,7 +2,6 @@
 using ImGuiNET;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Pixl.Mac.Editor")]
@@ -14,13 +13,14 @@ internal sealed class Editor
 {
     private readonly Gui _gui;
     private readonly RenderTexture _gameRenderTexture;
-    private readonly EditorWindows _windows;
+    private readonly List<IEditorWindow> _windows = new();
     private long _time;
     private long _deltaTime;
     private long _startTime;
     private bool _gameFocused;
+    private bool _firstUI = true;
 
-    public Editor(Resources resources, Graphics graphics, AppWindow window, Game game, EditorGameWindow gameWindow)
+    public Editor(Resources resources, Graphics graphics, AppWindow window, Game game, GameWindow gameWindow, MemoryLogger memoryLogger)
     {
         Resources = resources ?? throw new ArgumentNullException(nameof(resources));
         Graphics = graphics ?? throw new ArgumentNullException(nameof(graphics));
@@ -33,7 +33,13 @@ internal sealed class Editor
         _gameRenderTexture = new RenderTexture(gameWindow.Size, SampleMode.Point, ColorFormat.Rgba32);
         Game.TargetRenderTexture = _gameRenderTexture;
         gameWindow.RenderTexture = _gameRenderTexture;
-        _windows = new(gameWindow);
+
+        _windows.Add(gameWindow);
+        _windows.Add(new ConsoleWindow(memoryLogger));
+        _windows.Add(new HierarchyWindow(game.Scene));
+        _windows.Add(new SystemsWindow(game.Scene));
+        _windows.Add(new PropertiesWindow());
+        _windows.Add(new TestWindow());
     }
 
     public EditorDefaultResources DefaultResources { get; }
@@ -41,7 +47,7 @@ internal sealed class Editor
     public Graphics Graphics { get; }
     public AppWindow Window { get; }
     public Game Game { get; }
-    public EditorGameWindow GameWindow { get; }
+    public GameWindow GameWindow { get; }
 
     public bool Run()
     {
@@ -74,13 +80,68 @@ internal sealed class Editor
     {
         UpdateTime();
         ProcessEvents(events);
-        
-        SubmitUI();
     }
 
     public void WaitForNextUpdate()
     {
         Game.WaitForNextUpdate();
+    }
+
+    private void MainDockspace()
+    {
+        var id = ImGui.GetID("Main DockSpace");
+        var viewport = ImGui.GetMainViewport();
+        ImGuiInternal.DockBuilderSetNodeSize(id, viewport.WorkSize);
+        ImGuiInternal.DockBuilderSetNodePos(id, viewport.WorkPos);
+
+        if (!_firstUI) return; // dock builder only on first UI
+
+        ImGuiInternal.DockBuilderAddNode(id, ImGuiDockNodeFlags.NoResize);
+
+        uint dummy = 0;
+        var dock1 = ImGuiInternal.DockBuilderSplitNode(id, ImGuiDir.Left, 0.75f, ref dummy, ref id);
+        var dock2 = ImGuiInternal.DockBuilderSplitNode(id, ImGuiDir.Right, 0.25f, ref dummy, ref id);
+        var dock3 = ImGuiInternal.DockBuilderSplitNode(dock1, ImGuiDir.Down, 0.25f, ref dummy, ref dock1);
+        var dock4 = ImGuiInternal.DockBuilderSplitNode(dock1, ImGuiDir.Left, 0.25f, ref dummy, ref dock1);
+        var dock5 = ImGuiInternal.DockBuilderSplitNode(dock4, ImGuiDir.Down, 0.3f, ref dummy, ref dock4);
+
+        ImGuiInternal.DockBuilderDockWindow("Game", dock1);
+        ImGuiInternal.DockBuilderDockWindow("Hierarchy", dock4);
+        ImGuiInternal.DockBuilderDockWindow("Systems", dock5);
+        ImGuiInternal.DockBuilderDockWindow("Properties", dock2);
+        ImGuiInternal.DockBuilderDockWindow("Console", dock3);
+
+        ImGuiInternal.DockBuilderFinish(id);
+    }
+
+    private void MainMenuBar()
+    {
+        if (!ImGui.BeginMainMenuBar()) return;
+
+        if (ImGui.BeginMenu("File"))
+        {
+            if (ImGui.MenuItem("New Scene", "Ctrl + N"))
+            {
+
+            }
+
+            ImGui.EndMenu();
+        }
+
+        if (ImGui.BeginMenu("Window"))
+        {
+            foreach (var window in _windows)
+            {
+                if (ImGui.MenuItem(window.Name))
+                {
+                    window.Open = true;
+                }
+            }
+
+            ImGui.EndMenu();
+        }
+
+        ImGui.EndMainMenuBar();
     }
 
     private void ProcessEvents(Span<WindowEvent> events)
@@ -93,6 +154,9 @@ internal sealed class Editor
     {
         if (!Graphics.Setup) return;
 
+        // submit ui
+        SubmitUI();
+
         // sync size
         Graphics.UpdateWindowSize(Window.Size);
 
@@ -103,16 +167,20 @@ internal sealed class Editor
 
     private void SubmitUI()
     {
-        _windows.SubmitUI();
+        MainMenuBar();
+        MainDockspace();
+        SubmitWindows();
 
-        ImGui.Begin("Test");
-        ImGui.Text("Hello, world!");
-        ImGui.Text($"Mouse position: {ImGui.GetMousePos()}");
-        ImGui.SameLine(0, -1);
+        _firstUI = false;
+    }
 
-        float framerate = ImGui.GetIO().Framerate;
-        ImGui.Text($"Application average {1000.0f / framerate:0.##} ms/frame ({framerate:0.#} FPS)");
-        ImGui.End();
+    private void SubmitWindows()
+    {
+        foreach (var window in _windows)
+        {
+            if (!window.Open) continue;
+            window.SubmitUI();
+        }
     }
 
     private void UpdateGame(Span<WindowEvent> events)

@@ -67,7 +67,7 @@
                 _addTime += Time.UpdateDelta;
                 while (_addTime >= 0.01f)
                 {
-                    _velocitySystem.CreateEntities(500);
+                    _velocitySystem.CreateEntities(10);
                     _addTime -= 0.01f;
                 }
             }
@@ -77,7 +77,7 @@
                 _removeTime += Time.UpdateDelta;
                 while (_removeTime >= 0.01f)
                 {
-                    _velocitySystem.RemoveEntities(500);
+                    _velocitySystem.RemoveEntities(10);
                     _removeTime -= 0.01f;
                 }
             }

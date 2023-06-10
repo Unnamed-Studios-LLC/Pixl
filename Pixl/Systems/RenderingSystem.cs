@@ -6,7 +6,6 @@ public sealed class RenderingSystem : ComponentSystem
 {
     public Material? Material;
     public Property? WorldToClipMatrix;
-    private bool _matrixFlag;
 
     public RenderingSystem()
     {
@@ -23,20 +22,8 @@ public sealed class RenderingSystem : ComponentSystem
         WorldToClipMatrix = worldToClipMatrix;
     }
 
-    public override void OnRegisterEvents()
-    {
-        RegisterEvent<Transform>(Event.OnAdd, OnAdd);
-    }
-
     internal override void OnRender(VertexRenderer renderer)
     {
-        // parallel matrix multiplcation and hierarchy calculation
-        _matrixFlag = !_matrixFlag;
-        Scene.Entities.ParallelForEach((ref Transform transform) =>
-        {
-            Scene.Entities.UpdateWorldMatrix(ref transform, _matrixFlag);
-        });
-
         Scene.Entities.ForEach((ref Camera camera, ref Transform cameraTransform) =>
         {
             var windowSize = Window.Size;
@@ -80,10 +67,5 @@ public sealed class RenderingSystem : ComponentSystem
             });
             renderer.EndBatch();
         });
-    }
-
-    private void OnAdd(uint entityId, ref Transform transform)
-    {
-        transform.Flag = _matrixFlag;
     }
 }

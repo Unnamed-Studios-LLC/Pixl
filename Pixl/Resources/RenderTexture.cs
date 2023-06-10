@@ -31,6 +31,7 @@ public sealed class RenderTexture : GraphicsResource
 
     public void Resize(Int2 targetSize)
     {
+        if (targetSize == Size) return; // no change occurred
         if (targetSize.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(targetSize));
         if (targetSize.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(targetSize));
         Size = targetSize;

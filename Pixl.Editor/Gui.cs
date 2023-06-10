@@ -39,6 +39,7 @@ internal sealed partial class Gui : GraphicsResource
         RenderImGui(graphics, commands, frameBuffer);
         commands.End();
         graphics.Submit(commands);
+        UpdateCursor();
     }
 
     public void Start(Resources resources)
@@ -232,6 +233,21 @@ internal sealed partial class Gui : GraphicsResource
             indexOffset += drawList.IdxBuffer.Size;
             vertexOffset += drawList.VtxBuffer.Size;
         }
+    }
+
+    private void UpdateCursor()
+    {
+        var imGuiCursor = ImGui.GetMouseCursor();
+        var cursorState = imGuiCursor switch
+        {
+            ImGuiMouseCursor.Hand => CursorState.Hand,
+            ImGuiMouseCursor.TextInput => CursorState.TextInput,
+            ImGuiMouseCursor.ResizeAll or ImGuiMouseCursor.ResizeNESW or ImGuiMouseCursor.ResizeNWSE => CursorState.Resize,
+            ImGuiMouseCursor.ResizeEW => CursorState.ResizeHorizontal,
+            ImGuiMouseCursor.ResizeNS => CursorState.ResizeVertical,
+            _ => CursorState.None
+        };
+        Window.CursorState = cursorState;
     }
 
     private void UpdateImGui(float deltaTime, Span<WindowEvent> events)

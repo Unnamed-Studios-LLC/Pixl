@@ -49,7 +49,7 @@ internal sealed class FileLogger : ILogger
     internal static string FormatObject(object @object)
     {
         var @string = @object?.ToString() ?? "null";
-        var timestamp = DateTime.Now.ToLongTimeString();
+        var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
         return $"[{timestamp}] {@string}";
     }
 

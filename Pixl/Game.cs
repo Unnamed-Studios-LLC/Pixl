@@ -186,6 +186,10 @@ namespace Pixl
                 // render texture is not null and frame buffer is null, unknown error
                 return;
             }
+            else
+            {
+                TargetRenderTexture.Resize(Player.Window.Size);
+            }
 
             var commands = Graphics.Commands;
             var frameBuffer = TargetRenderTexture?.Framebuffer ?? Graphics.SwapchainFramebuffer;

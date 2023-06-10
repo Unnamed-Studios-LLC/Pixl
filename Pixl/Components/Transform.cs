@@ -7,6 +7,7 @@ public struct Transform
     public Vec3 Scale;
     public uint ParentId;
     internal bool Flag;
+    internal uint SyncedParentId;
     internal Matrix4x4 WorldMatrix;
 
     public Transform(Vec3 position, Vec3 rotation, Vec3 scale, uint parentId = 0)

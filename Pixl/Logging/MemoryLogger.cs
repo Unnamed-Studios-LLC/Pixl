@@ -1,19 +1,27 @@
 ﻿namespace Pixl;
 
-internal class MemoryLogger : ILogger
+internal sealed class MemoryLogger : ILogger
 {
-    private readonly List<string> _logs = new();
-    private readonly int _maxByteSize;
-    private readonly int _cutdownSize;
-    private int _byteSize;
+    private readonly List<LogEntry> _logs = new();
+    private readonly int _maxCount;
+    private readonly int _cutdownCount;
+    private uint _nextLogId;
 
-    public MemoryLogger(int maxByteSize, int cutdownSize)
+    public MemoryLogger(int maxCount, int cutdownCount)
     {
-        _maxByteSize = maxByteSize;
-        _cutdownSize = cutdownSize;
+        if (maxCount <= 0) throw new ArgumentOutOfRangeException(nameof(maxCount), "Parameter must be greater than 0");
+        if (cutdownCount <= 0) throw new ArgumentOutOfRangeException(nameof(cutdownCount), "Parameter must be greater than 0");
+        _maxCount = maxCount;
+        _cutdownCount = cutdownCount;
     }
 
-    public IReadOnlyList<string> Logs => _logs;
+    public void Clear()
+    {
+        lock (_logs)
+        {
+            _logs.Clear();
+        }
+    }
 
     public void Flush()
     {
@@ -22,44 +30,28 @@ internal class MemoryLogger : ILogger
 
     public void Log(object @object)
     {
+        var stacktrace = Environment.StackTrace;
         var formatted = FileLogger.FormatObject(@object);
-        var sizeOfFormatted = SizeOfLog(formatted);
         lock (_logs)
         {
-            // make space (removing up to _cutdownSize if we can)
-            MakeSpace(sizeOfFormatted, _cutdownSize);
+            // make space
+            if (_logs.Count >= _maxCount)
+            {
+                var toRemove = Math.Min(_logs.Count, _cutdownCount);
+                _logs.RemoveRange(0, toRemove);
+            }
 
             // append log
-            _logs.Add(formatted);
+            var entry = new LogEntry(_nextLogId++, DateTime.Now, formatted, stacktrace, null);
+            _logs.Add(entry);
         }
     }
 
-    private static int SizeOfLog(string log)
+    public void Read(Action<List<LogEntry>> action)
     {
-        // rough size (string has some other bytes to it, works well enough for our purpose)
-        return log.Length * sizeof(char);
-    }
-
-    private void MakeSpace(int minSpace, int maxSpace)
-    {
-        if (minSpace >= _maxByteSize) throw new Exception("Unable to make space for, requested min byte size is larger than the max byte size!");
-        var spaceToFree = Math.Max(minSpace, Math.Min(maxSpace, _maxByteSize));
-
-        // determine how many logs to remove
-        int removeCount = 0;
-        var postRemoveByteSize = _byteSize;
-        while (postRemoveByteSize + spaceToFree > _maxByteSize)
+        lock (_logs)
         {
-            var log = _logs[removeCount++];
-            var size = SizeOfLog(log);
-            postRemoveByteSize -= size;
-        }
-
-        // remove from log list
-        if (removeCount > 0)
-        {
-            _logs.RemoveRange(0, removeCount);
-            _byteSize = postRemoveByteSize;
+            action(_logs);
         }
     }
 }

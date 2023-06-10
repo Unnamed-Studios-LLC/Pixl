@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Veldrid;
@@ -22,6 +23,9 @@ internal class WinWindow : AppWindow
     private Int2 _clientSize;
     private WindowStyle _windowStyle;
     private string _windowTitle;
+    private CursorState _cursorState = CursorState.None;
+
+    private readonly Dictionary<CursorState, nint> _systemCursors = new();
 
     public WinWindow(string title, Int2 size)
     {
@@ -65,6 +69,13 @@ internal class WinWindow : AppWindow
 
         User32Methods.ShowWindow(_hwnd, ShowWindowCommands.SW_SHOWNORMAL);
         User32Methods.UpdateWindow(_hwnd);
+
+        LoadSystemCursor(CursorState.None, SystemCursor.IDC_ARROW);
+        LoadSystemCursor(CursorState.Hand, SystemCursor.IDC_HAND);
+        LoadSystemCursor(CursorState.TextInput, SystemCursor.IDC_IBEAM);
+        LoadSystemCursor(CursorState.Resize, SystemCursor.IDC_SIZEALL);
+        LoadSystemCursor(CursorState.ResizeHorizontal, SystemCursor.IDC_SIZEWE);
+        LoadSystemCursor(CursorState.ResizeVertical, SystemCursor.IDC_SIZENS);
     }
 
     public int ExitCode { get; set; }
@@ -87,6 +98,23 @@ internal class WinWindow : AppWindow
     {
         get => _windowTitle;
         set => SetWindowTitle(value);
+    }
+    public override CursorState CursorState
+    {
+        get => _cursorState;
+        set => SetCursorState(value);
+    }
+
+    public override void PushEvent(in WindowEvent @event)
+    {
+        switch (@event.Type)
+        {
+            case WindowEventType.MouseMove:
+                UpdateCursor();
+                break;
+        }
+
+        base.PushEvent(@event);
     }
 
     public void Run()
@@ -113,6 +141,13 @@ internal class WinWindow : AppWindow
             !User32Methods.ScreenToClient(_hwnd, ref point)) return Int2.Zero;
         point.Y = _clientSize.Y - point.Y - 1;
         return new Int2(point.X, point.Y);
+    }
+
+    private void LoadSystemCursor(CursorState cursorState, SystemCursor systemCursor)
+    {
+        var cursorId = User32Methods.LoadCursor(default, (nint)systemCursor);
+        if (cursorId == 0) return;
+        _systemCursors[cursorState] = cursorId;
     }
 
     private void OnPaint()
@@ -246,6 +281,20 @@ internal class WinWindow : AppWindow
             }
         }
         return User32Methods.DefWindowProc(hwnd, umsg, wParam, lParam);
+    }
+
+    private void SetCursorState(CursorState value)
+    {
+        if (_cursorState == value) return;
+        _cursorState = value;
+        UpdateCursor();
+    }
+
+    private void UpdateCursor()
+    {
+        if (!_systemCursors.TryGetValue(_cursorState, out var cursorId) &&
+            !_systemCursors.TryGetValue(CursorState.None, out cursorId)) return;
+        User32Methods.SetCursor(cursorId);
     }
 
     private void SetWindowTitle(string value)

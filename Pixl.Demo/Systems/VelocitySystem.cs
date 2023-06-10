@@ -79,29 +79,36 @@ namespace Pixl.Demo.Systems
 
         public override void OnAdd()
         {
+            var nameSystem = Scene.GetSystem<NameSystem>();
+
             // create camera
             _cameraLayout.Set(new Transform(new Vec3(0, 0, 10), new Vec3(0, 0, 0), Vec3.One));
             _cameraLayout.Set(new Camera());
             CameraEntityId = Scene.Entities.CreateEntity(_cameraLayout);
+            nameSystem?.SetName(CameraEntityId, "Camera");
 
             // create canvas
             _canvasLayout.Set(new Canvas(new Vec2(1, 1)));
-            Scene.Entities.CreateEntity(_canvasLayout);
+            var entityId = Scene.Entities.CreateEntity(_canvasLayout);
+            nameSystem?.SetName(entityId, "Canvas");
 
             // create ui
             _uiLayout.Set(new CanvasTransform(new Vec2(10, 10), Vec3.Zero, Vec2.One, new Vec2(100, 100), Vec2.Zero, Vec2.Zero, 0));
             _uiLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 32, 32), Color32.White));
-            Scene.Entities.CreateEntity(_uiLayout);
+            entityId = Scene.Entities.CreateEntity(_uiLayout);
+            nameSystem?.SetName(entityId, "UI Element 1");
 
             _uiLayout.Set(new CanvasTransform(new Vec2(120, 10), Vec3.Zero, Vec2.One, new Vec2(20, 20), Vec2.Zero, Vec2.Zero, 0));
             _uiLayout.Set(new Sprite(0, new RectInt(0, 0, 32, 32), Color32.White));
-            Scene.Entities.CreateEntity(_uiLayout);
+            entityId = Scene.Entities.CreateEntity(_uiLayout);
+            nameSystem?.SetName(entityId, "UI Element 2");
 
             _uiLayout.Set(new CanvasTransform(new Vec2(10, 120), Vec3.Zero, Vec2.One, new Vec2(40, 20), Vec2.Zero, Vec2.Zero, 0));
             _uiLayout.Set(new Sprite(_charactersTexture.Id, new RectInt(0, 0, 32, 32), Color32.White));
-            Scene.Entities.CreateEntity(_uiLayout);
+            entityId = Scene.Entities.CreateEntity(_uiLayout);
+            nameSystem?.SetName(entityId, "UI Element 3");
 
-            CreateEntities(10_000);
+            CreateEntities(5);
         }
 
         public override void OnLateUpdate()
