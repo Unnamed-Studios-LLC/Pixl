@@ -3,37 +3,42 @@
 public static class Time
 {
     /// <summary>
-    /// <inheritdoc cref="Api.FixedTotal"/>
+    /// <inheritdoc cref="TimeVariables.FixedTotal"/>
     /// </summary>
-    public static float FixedTotal => Game.Current.TimeTotal;
+    public static float FixedTotal => Variables.FixedTotal;
 
     /// <summary>
-    /// <inheritdoc cref="Api.FixedUpdateDelta"/>
+    /// <inheritdoc cref="TimeVariables.FixedDelta"/>
     /// </summary>
-    public static float FixedUpdateDelta => Game.Current.FixedUpdateDelta;
+    public static float FixedDelta => Variables.FixedDelta;
 
     /// <summary>
-    /// <inheritdoc cref="Api.Precise"/>
+    /// <inheritdoc cref="TimeVariables.TargetFixedDelta"/>
     /// </summary>
-    public static PreciseTime Precise => Game.Current.Precise;
+    public static float TargetFixedDelta
+    {
+        get => Precise.TargetDelta / (float)PreciseVariables.TicksPerSecond;
+        set => Precise.TargetDelta = (long)MathF.Floor(value * PreciseVariables.TicksPerSecond);
+    }
 
     /// <summary>
-    /// <inheritdoc cref="PreciseTime.TicksPerSecond"/>
+    /// <inheritdoc cref="TimeVariables.TargetUpdateDelta"/>
     /// </summary>
-    public static long PreciseTicksPerSecond => PreciseTime.TicksPerSecond;
+    public static float TargetUpdateDelta
+    {
+        get => Precise.TargetDelta / (float)PreciseVariables.TicksPerSecond;
+        set => Precise.TargetDelta = (long)MathF.Floor(value * PreciseVariables.TicksPerSecond);
+    }
 
     /// <summary>
-    /// <inheritdoc cref="Api.TargetUpdateDelta"/>
+    /// <inheritdoc cref="TimeVariables.Total"/>
     /// </summary>
-    public static float TargetUpdateDelta => Game.Current.TargetUpdateDelta;
+    public static float Total => Variables.Total;
 
     /// <summary>
-    /// <inheritdoc cref="Api.Total"/>
+    /// <inheritdoc cref="TimeVariables.Delta"/>
     /// </summary>
-    public static float Total => Game.Current.TimeTotal;
+    public static float Delta => Variables.Delta;
 
-    /// <summary>
-    /// <inheritdoc cref="Api.UpdateDelta"/>
-    /// </summary>
-    public static float UpdateDelta => Game.Current.UpdateDelta;
+    internal static ref TimeVariables Variables => ref Game.Shared.Time;
 }

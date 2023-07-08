@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
-    <PublishAot>true</PublishAot>
+    <PublishAot>false</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Pixl.Demo\Pixl.Demo.csproj" />
     <ProjectReference Include="..\Pixl.Editor\Pixl.Editor.csproj" />
     <ProjectReference Include="..\Pixl.Win\Pixl.Win.csproj" />
   </ItemGroup>

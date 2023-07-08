@@ -7,7 +7,7 @@ public sealed class RenderTexture : GraphicsResource
 {
     private Texture? _depthTexture;
 
-    public RenderTexture(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
+    internal RenderTexture(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
     {
         if (size.X <= 0) throw new ArgumentException($"{nameof(RenderTexture)} width cannot be less than or equal to 0", nameof(size));
         if (size.Y <= 0) throw new ArgumentException($"{nameof(RenderTexture)} height cannot be less than or equal to 0", nameof(size));

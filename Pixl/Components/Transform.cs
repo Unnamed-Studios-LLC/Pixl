@@ -1,58 +1,22 @@
 ﻿namespace Pixl;
 
-public struct Transform
+public struct Transform : IComponent
 {
+    [Range<float>(float.MinValue, float.MaxValue, 0.1f)]
     public Vec3 Position;
+    [Range<float>(float.MinValue, float.MaxValue, 0.2f)]
     public Vec3 Rotation;
+    [Range<float>(float.MinValue, float.MaxValue, 0.05f)]
     public Vec3 Scale;
-    public uint ParentId;
-    internal bool Flag;
-    internal uint SyncedParentId;
-    internal Matrix4x4 WorldMatrix;
+    public Matrix4x4 LocalToWorld;
 
-    public Transform(Vec3 position, Vec3 rotation, Vec3 scale, uint parentId = 0)
+    public Transform(Vec3 position, Vec3 rotation, Vec3 scale)
     {
         Position = position;
         Rotation = rotation;
         Scale = scale;
-        ParentId = parentId;
+        Matrix4x4.Transformation(in position, in rotation, in scale, out LocalToWorld);
     }
 
     public static Transform Default => new(Vec3.Zero, Vec3.Zero, Vec3.One);
-
-    internal void GetTransformationMatrix(out Matrix4x4 matrix)
-    {
-        matrix = Matrix4x4.Translate(in Position);
-        if (Rotation.X != 0)
-        {
-            matrix *= Matrix4x4.RotationX((float)Math.Sin(Rotation.X * Angle.Deg2Rad), (float)Math.Cos(Rotation.X * Angle.Deg2Rad));
-        }
-        if (Rotation.Y != 0)
-        {
-            matrix *= Matrix4x4.RotationY((float)Math.Sin(Rotation.Y * Angle.Deg2Rad), (float)Math.Cos(Rotation.Y * Angle.Deg2Rad));
-        }
-        if (Rotation.Z != 0)
-        {
-            matrix *= Matrix4x4.RotationZ((float)Math.Sin(Rotation.Z * Angle.Deg2Rad), (float)Math.Cos(Rotation.Z * Angle.Deg2Rad));
-        }
-        matrix *= Matrix4x4.Scale(in Scale);
-    }
-
-    internal void GetViewMatrix(out Matrix4x4 matrix)
-    {
-        matrix = Matrix4x4.Scale(in Scale);
-        if (Rotation.X != 0)
-        {
-            matrix *= Matrix4x4.RotationX((float)Math.Sin(Rotation.X * Angle.Deg2Rad), (float)Math.Cos(Rotation.X * Angle.Deg2Rad));
-        }
-        if (Rotation.Y != 0)
-        {
-            matrix *= Matrix4x4.RotationY((float)Math.Sin(Rotation.Y * Angle.Deg2Rad), (float)Math.Cos(Rotation.Y * Angle.Deg2Rad));
-        }
-        if (Rotation.Z != 0)
-        {
-            matrix *= Matrix4x4.RotationZ((float)Math.Sin(Rotation.Z * Angle.Deg2Rad), (float)Math.Cos(Rotation.Z * Angle.Deg2Rad));
-        }
-        matrix *= Matrix4x4.Translate(Position * -1);
-    }
 }

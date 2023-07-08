@@ -9,7 +9,7 @@ using Veldrid;
 
 namespace Pixl.iOS;
 
-internal sealed class iOSWindow : AppWindow
+internal sealed class iOSWindow : Window
 {
     private readonly Int2 _screenSize;
     private readonly UIWindow _window;

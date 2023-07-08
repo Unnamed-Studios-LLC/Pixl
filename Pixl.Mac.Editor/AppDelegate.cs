@@ -40,7 +40,7 @@ public class AppDelegate : NSApplicationDelegate
         _gamePlayer = new EditorGamePlayer(_gameWindow, _editorPlayer, logger);
 
         _game = new Game(_resources, _graphics, _gamePlayer, new Entry());
-        _editor = new PixlEditor(_resources, _graphics, _editorWindow, _game, _gameWindow);
+        _editor = new PixlEditor(_graphics, _editorWindow, _game, _gameWindow, _resources);
         _gameThread = new Thread(() => RunEditor(_editorWindow, _editor, _game, _graphics));
         _gameThread.Priority = ThreadPriority.Highest;
         _gameThread.IsBackground = false;

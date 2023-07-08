@@ -1,57 +1,35 @@
 ﻿using Pixl;
-using Pixl.Demo;
 using Pixl.Editor;
 using Pixl.Win;
-using Pixl.Win.Editor;
 using System;
 using System.IO;
-using System.Threading;
 
 try
 {
-    var resources = new Resources();
+    var window = new WinWindow("Pixl Editor", new Int2(1000, 800));
+    var files = new Files(string.Empty, new WinFileBrowser(window), typeof(Game).Assembly, typeof(Editor).Assembly);
     var graphics = new Graphics();
+    var resources = new Resources(graphics, files);
 
-    var editorWindow = new WinEditorWindow(new Int2(1000, 800));
-    var editorPlayer = new WinEditorPlayer();
+    var valueStore = new WinValueStore("Unnamed Studios", "Pixl Editor");
+    var values = new Values(valueStore);
+    var logger = new FileLogger(string.Empty, "editor.log", false);
 
-    graphics.Start(resources, editorWindow, GraphicsApi.DirectX);
-
-    var logger = editorPlayer.MemoryLogger;
-
-    var gameWindow = new GameWindow(editorWindow, "Pixl Game", new Int2(500, 500));
-    var gamePlayer = new EditorGamePlayer(gameWindow, editorPlayer, logger);
-
-    var game = new Game(resources, graphics, gamePlayer, new Entry());
-    var editor = new Editor(resources, graphics, editorWindow, game, gameWindow, editorPlayer.MemoryLogger);
-
-    var gameThread = new Thread(() => runEditor(editorWindow, editor, game, graphics));
-    gameThread.Start();
-
-    editorWindow.Run();
-
-    gameThread.Join();
-    graphics.Stop(resources);
-
-    editorPlayer.Logger.Flush();
-    return editorPlayer.ExitCode;
-}
-catch (Exception e)
-{
-    File.WriteAllText("crash.log", e.ToString());
-    return 1;
-}
-
-static void runEditor(WinWindow window, Editor editor, Game game, Graphics graphics)
-{
-    game.Start();
+    var editor = new Editor(window, graphics, resources, values, logger, files);
     editor.Start();
+    graphics.Start(resources, window, GraphicsApi.DirectX);
     while (editor.Run())
     {
         graphics.SwapBuffers();
         editor.WaitForNextUpdate();
     }
-    window.Stop();
+    graphics.Stop(resources);
     editor.Stop();
-    game.Stop();
+
+    return editor.ExitCode;
+}
+catch (Exception e)
+{
+    File.WriteAllText("crash.log", e.ToString());
+    return 1;
 }

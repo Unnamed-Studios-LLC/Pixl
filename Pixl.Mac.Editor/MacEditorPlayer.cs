@@ -23,8 +23,8 @@ internal sealed class MacEditorPlayer : IPlayer
     public string AssetsPath { get; }
     public string DataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pixl Editor", "Company Name", "Product Name");
 
-    public AppWindow Window => throw new NotImplementedException();
-    public ILogger Logger => MemoryLogger;
+    public Window Window => throw new NotImplementedException();
+    public Logger Logger => MemoryLogger;
 
     public MemoryLogger MemoryLogger { get; }
 

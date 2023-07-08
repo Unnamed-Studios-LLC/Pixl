@@ -6,7 +6,8 @@ internal static class CommandListExtensions
 {
     public static void SetMaterial(this CommandList commandList, Material material, Framebuffer framebuffer, Graphics graphics)
     {
-        commandList.SetPipeline(material.CreatePipeline(graphics, framebuffer));
+        var pipeline = material.CreatePipeline(graphics, framebuffer);
+        commandList.SetPipeline(pipeline);
 
         uint slot = 0;
         foreach (var resourceSet in material.CreateResourceSets(graphics))

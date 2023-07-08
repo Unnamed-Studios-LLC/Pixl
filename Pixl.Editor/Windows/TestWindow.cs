@@ -2,29 +2,16 @@
 
 namespace Pixl.Editor;
 
-internal sealed class TestWindow : IEditorWindow
+internal sealed class TestWindow : EditorWindow
 {
-    private bool _open = false;
+    public override string Name => "Test";
 
-    public string Name => "Test";
-    public bool Open
+    protected override void OnUI()
     {
-        get => _open;
-        set => _open = value;
-    }
-
-    public void SubmitUI()
-    {
-        if (!ImGui.Begin(Name, ref _open))
-        {
-            return;
-        }
-
         float framerate = ImGui.GetIO().Framerate;
         ImGui.Text("Hello, world!");
         ImGui.Text($"Mouse position: {ImGui.GetMousePos()}");
         ImGui.SameLine(0, -1);
         ImGui.Text($"Application average {1000.0f / framerate:0.##} ms/frame ({framerate:0.#} FPS)");
-        ImGui.End();
     }
 }

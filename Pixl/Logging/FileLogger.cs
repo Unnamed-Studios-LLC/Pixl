@@ -2,7 +2,7 @@
 
 namespace Pixl;
 
-internal sealed class FileLogger : ILogger
+internal sealed class FileLogger : Logger
 {
     private readonly string _outputFolder;
     private readonly bool _immediateWrite;
@@ -30,7 +30,7 @@ internal sealed class FileLogger : ILogger
         }
     }
 
-    public void Flush()
+    public override void Flush()
     {
         lock (_queueLock)
         {
@@ -39,7 +39,7 @@ internal sealed class FileLogger : ILogger
         }
     }
 
-    public void Log(object @object)
+    public override void Log(object @object)
     {
         var @string = FormatObject(@object);
         if (_immediateWrite) WriteImmediate(@string);

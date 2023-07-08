@@ -12,7 +12,6 @@ internal sealed class SystemList
 
     public void Add(ComponentSystem system)
     {
-        Application.RequireMainThread();
         _systems.Add(system);
         _systems.Sort();
 
@@ -57,7 +56,14 @@ internal sealed class SystemList
     {
         foreach (var system in _onFixedUpdate)
         {
-            ImplUtils.CallUserMethod(system.OnFixedUpdate);
+            try
+            {
+                system.OnFixedUpdate();
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
         }
     }
 
@@ -65,7 +71,14 @@ internal sealed class SystemList
     {
         foreach (var system in _onLateUpdate)
         {
-            ImplUtils.CallUserMethod(system.OnLateUpdate);
+            try
+            {
+                system.OnLateUpdate();
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
         }
     }
 
@@ -105,7 +118,14 @@ internal sealed class SystemList
     {
         foreach (var system in _onRender)
         {
-            ImplUtils.CallUserMethod(() => system.OnRender(renderer));
+            try
+            {
+                system.OnRender(renderer);
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
         }
     }
 
@@ -113,7 +133,14 @@ internal sealed class SystemList
     {
         foreach (var system in _onUpdate)
         {
-            ImplUtils.CallUserMethod(system.OnUpdate);
+            try
+            {
+                system.OnUpdate();
+            }
+            catch (Exception e)
+            {
+                Debug.Log(e);
+            }
         }
     }
 }

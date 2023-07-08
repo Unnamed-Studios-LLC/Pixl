@@ -10,10 +10,10 @@ internal sealed class WinGamePlayer : IPlayer
     public string DataPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Company Name", "Product Name");
     public string AssetsPath => "Assets";
 
-    public AppWindow Window { get; }
-    public ILogger Logger { get; }
+    public Window Window { get; }
+    public Logger Logger { get; }
 
-    public WinGamePlayer(AppWindow window)
+    public WinGamePlayer(Window window)
     {
         Window = window;
 

@@ -2,70 +2,77 @@
 using System.Numerics;
 using Veldrid;
 
-namespace Pixl.Editor
+namespace Pixl.Editor;
+
+internal sealed class GameWindow : Window, IEditorUI
 {
-    internal class GameWindow : AppWindow, IEditorWindow
+    private Vector2 _windowPosition;
+    private Int2 _size;
+    private bool _open = true;
+
+    public override Int2 Size
     {
-        private Int2 _size;
-        private readonly AppWindow _editorWindow;
-        private bool _open = true;
+        get => _size;
+        set { } // game cannot alter window size
+    }
+    public override WindowStyle Style { get; set; }
+    public override string Title
+    {
+        get => "Game";
+        set { } // game cannot alter window name
+    }
+    public RenderTexture? RenderTexture { get; set; }
+    public bool Focused { get; private set; }
+    public string Name => Title;
+    public bool Open
+    {
+        get => _open;
+        set => _open = value;
+    }
 
-        public GameWindow(AppWindow mainWindow, string title, Int2 size)
+    public override Int2 MousePosition => GetMousePosition();
+
+    public override CursorState CursorState { get; set; }
+    public override SwapchainSource SwapchainSource => throw new NotImplementedException();
+
+    public void SubmitUI()
+    {
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        SubmitGameWindow();
+        ImGui.PopStyleVar(3);
+    }
+
+    public override void Start() { }
+    public override void Stop() { }
+
+    private Int2 GetMousePosition()
+    {
+        if (!_open) return Int2.Zero;
+
+        var io = ImGui.GetIO();
+        var relative = io.MousePos - _windowPosition;
+        relative.Y = _size.Y - relative.Y - 1;
+        return (Int2)relative.ToVec2();
+    }
+
+    private void SubmitGameWindow()
+    {
+        if (!ImGui.Begin(Name, ref _open))
         {
-            _editorWindow = mainWindow;
-            Title = title;
-            _size = size;
+            return;
         }
 
-        public override Int2 Size
+        _windowPosition = ImGui.GetWindowPos();
+        var contentMin = ImGui.GetWindowContentRegionMin();
+        var contentMax = ImGui.GetWindowContentRegionMax();
+        _size = (Int2)(contentMax - contentMin).ToVec2();
+        Focused = ImGui.IsWindowFocused();
+        if (RenderTexture != null)
         {
-            get => _size;
-            set
-            {
-                // game cannot alter window size
-            }
+            ImGui.Image((nint)RenderTexture.Id, new Vector2(_size.X, _size.Y));
         }
-        public override Int2 MousePosition => _editorWindow.MousePosition;
-        public override WindowStyle Style { get; set; }
-        public override SwapchainSource SwapchainSource => _editorWindow.SwapchainSource;
-        public override string Title { get; set; }
-        public RenderTexture? RenderTexture { get; set; }
-        public bool Focused { get; private set; }
-        public override CursorState CursorState { get; set; }
-        public string Name => "Game";
-        public bool Open
-        {
-            get => _open;
-            set => _open = value;
-        }
-
-        public void SubmitUI()
-        {
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowRounding, 0.0f);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
-            ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
-            SubmitGameWindow();
-            ImGui.PopStyleVar(3);
-            ImGui.End();
-        }
-
-        private void SubmitGameWindow()
-        {
-            if (!ImGui.Begin(Name, ref _open))
-            {
-                return;
-            }
-
-            ImGui.SetWindowSize(new Vector2(_size.X, _size.Y), ImGuiCond.FirstUseEver);
-            var contentMin = ImGui.GetWindowContentRegionMin();
-            var contentMax = ImGui.GetWindowContentRegionMax();
-            _size = (Int2)(contentMax - contentMin).ToVec2();
-            Focused = ImGui.IsWindowFocused();
-            if (RenderTexture != null)
-            {
-                ImGui.Image((nint)RenderTexture.Id, new Vector2(_size.X, _size.Y));
-            }
-            ImGui.End();
-        }
+        ImGui.End();
     }
 }

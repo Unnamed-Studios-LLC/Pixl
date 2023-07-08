@@ -4,16 +4,18 @@ namespace Pixl;
 
 public abstract class Shader
 {
-    private readonly AssetHandle _assetHandle;
+    private readonly Files _files;
+    private readonly FileHandle _fileHandle;
 
-    internal Shader(AssetHandle assetHandle)
+    internal Shader(Files files, FileHandle fileHandle)
     {
-        _assetHandle = assetHandle;
+        _files = files;
+        _fileHandle = fileHandle;
     }
 
     internal byte[] GetBytes()
     {
-        var assetStream = _assetHandle.GetStream();
+        var assetStream = _files.GetAssetStream(_fileHandle);
         string text;
         using (var streamReader = new StreamReader(assetStream))
             text = streamReader.ReadToEnd();

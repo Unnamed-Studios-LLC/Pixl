@@ -9,7 +9,8 @@ public sealed class NameSystem : ComponentSystem
 
     public string? GetName(uint entityId)
     {
-        if (!Scene.Entities.EntityExists(entityId)) return null;
+        if (!Scene.Entities.EntityExists(entityId) ||
+            !Scene.Entities.HasComponent<Editable>(entityId)) return null;
         string? name;
         while (!_names.TryGetValue(entityId, out name))
         {
@@ -21,8 +22,7 @@ public sealed class NameSystem : ComponentSystem
 
     public override void OnRegisterEvents()
     {
-        RegisterEvent<Transform>(Event.OnRemove, OnRemove);
-        RegisterEvent<CanvasTransform>(Event.OnRemove, OnRemove);
+        RegisterEvent<Editable>(Event.OnRemove, OnRemove);
     }
 
     public void SetName(uint entityId, string name)
@@ -31,12 +31,7 @@ public sealed class NameSystem : ComponentSystem
         _names[entityId] = name;
     }
 
-    private void OnRemove(uint entityId, ref Transform transform)
-    {
-        _names.TryRemove(entityId, out _);
-    }
-
-    private void OnRemove(uint entityId, ref CanvasTransform transform)
+    private void OnRemove(uint entityId, ref Editable editable)
     {
         _names.TryRemove(entityId, out _);
     }

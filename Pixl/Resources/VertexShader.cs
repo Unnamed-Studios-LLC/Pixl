@@ -6,7 +6,7 @@ namespace Pixl;
 
 public class VertexShader : Shader
 {
-    internal VertexShader(AssetHandle assetHandle, VertexLayoutDescription vertexLayout) : base(assetHandle)
+    internal VertexShader(Files files, FileHandle assetHandle, VertexLayoutDescription vertexLayout) : base(files, assetHandle)
     {
         VertexLayoutDescription = vertexLayout;
     }
@@ -14,11 +14,15 @@ public class VertexShader : Shader
     internal VertexLayoutDescription VertexLayoutDescription { get; }
 }
 
-public sealed class VertexShader<T> : VertexShader where T : unmanaged
+public sealed class VertexShader<T> : VertexShader where T : unmanaged, IVertex
 {
-    public VertexShader(string filePath) : this(AssetHandle.CreateAbsolutePath(filePath)) { }
+    internal VertexShader(Files files, FileHandle assetHandle) : base(files, assetHandle, GenerateVertexDescription()) { }
 
-    internal VertexShader(AssetHandle assetHandle) : base(assetHandle, GenerateVertexDescription()) { }
+    public static VertexShader<T> Create(string filePath)
+    {
+        Game.Shared.RequireMainThread();
+        return new VertexShader<T>(Game.Shared.Files, FileHandle.CreateExternal(filePath));
+    }
 
     private static VertexLayoutDescription GenerateVertexDescription()
     {

@@ -1,10 +1,10 @@
 ﻿namespace Pixl;
 
-internal sealed class BroadcastLogger : ILogger
+internal sealed class BroadcastLogger : Logger
 {
-    private readonly List<ILogger> _loggers = new();
+    private readonly List<Logger> _loggers = new();
 
-    public BroadcastLogger(params ILogger[] loggers)
+    public BroadcastLogger(params Logger[] loggers)
     {
         if (loggers is null)
         {
@@ -14,7 +14,7 @@ internal sealed class BroadcastLogger : ILogger
         _loggers.AddRange(loggers);
     }
 
-    public void Flush()
+    public override void Flush()
     {
         foreach (var logger in _loggers)
         {
@@ -22,7 +22,7 @@ internal sealed class BroadcastLogger : ILogger
         }
     }
 
-    public void Log(object @object)
+    public override void Log(object @object)
     {
         foreach (var logger in _loggers)
         {

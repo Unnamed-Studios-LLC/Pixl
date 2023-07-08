@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Veldrid;
+﻿using Veldrid;
 using Veldrid.SPIRV;
 
 namespace Pixl;
@@ -37,13 +36,13 @@ public class Material : GraphicsResource
     private IEnumerable<Property> LocalProperties => Properties.Where(x => x.Scope == PropertyScope.Local);
     private IEnumerable<Property> Properties => VertexProperties.Concat(FragmentProperties);
 
-    internal static Material CreateDefault(Property worldToClipMatrix)
+    internal static Material CreateDefault(Files files, Property worldToClipMatrix)
     {
-        var vertexHandle = AssetHandle.CreateInternal("default.vert");
-        var fragmentHandle = AssetHandle.CreateInternal("default.frag");
+        var vertexHandle = FileHandle.CreateInternal("default.vert");
+        var fragmentHandle = FileHandle.CreateInternal("default.frag");
 
-        var vertexShader = new VertexShader<PositionTexColorVertex>(vertexHandle);
-        var fragmentShader = new FragmentShader(fragmentHandle);
+        var vertexShader = new VertexShader<PositionTexColorVertex>(files, vertexHandle);
+        var fragmentShader = new FragmentShader(files, fragmentHandle);
 
         var vertexProperties = new Property[]
         { 
@@ -55,23 +54,56 @@ public class Material : GraphicsResource
             new Property("Main", PropertyScope.Local, PropertyDescriptor.CreateTexture2d())
         };
 
-        return new Material(vertexShader, fragmentShader, vertexProperties, fragmentProperties);
+        return new Material(vertexShader, fragmentShader, vertexProperties, fragmentProperties)
+        {
+            Name = "DefaultMaterial"
+        };
     }
 
-    internal static Material CreateError(Property worldToClipMatrix)
+    internal static Material CreateError(Files files, Property worldToClipMatrix)
     {
-        var vertexHandle = AssetHandle.CreateInternal("error.vert");
-        var fragmentHandle = AssetHandle.CreateInternal("error.frag");
+        var vertexHandle = FileHandle.CreateInternal("error.vert");
+        var fragmentHandle = FileHandle.CreateInternal("error.frag");
 
-        var vertexShader = new VertexShader<PositionVertex>(vertexHandle);
-        var fragmentShader = new FragmentShader(fragmentHandle);
+        var vertexShader = new VertexShader<PositionVertex>(files, vertexHandle);
+        var fragmentShader = new FragmentShader(files, fragmentHandle);
 
         var vertexProperties = new Property[]
         {
             worldToClipMatrix
         };
 
-        return new Material(vertexShader, fragmentShader, vertexProperties, Array.Empty<Property>());
+        return new Material(vertexShader, fragmentShader, vertexProperties, Array.Empty<Property>())
+        {
+            Name = "ErrorMaterial"
+        };
+    }
+
+    internal static Material CreateGui(Files files, Property worldToClipMatrix)
+    {
+        var vertexHandle = FileHandle.CreateInternal("gui.vert");
+        var fragmentHandle = FileHandle.CreateInternal("gui.frag");
+
+        var vertexShader = new VertexShader<GuiVertex>(files, vertexHandle);
+        var fragmentShader = new FragmentShader(files, fragmentHandle);
+
+        var vertexProperties = new Property[]
+        {
+            worldToClipMatrix
+        };
+
+        var fragmentProperties = new Property[]
+        {
+            new Property("Main", PropertyScope.Local, PropertyDescriptor.CreateTexture2d())
+        };
+
+        var material = new Material(vertexShader, fragmentShader, vertexProperties, fragmentProperties)
+        {
+            Name = "GuiMaterial",
+            DepthTestEnabled = false,
+            ClipRectEnabled = true
+        };
+        return material;
     }
 
     internal Pipeline CreatePipeline(Graphics graphics, Framebuffer framebuffer)

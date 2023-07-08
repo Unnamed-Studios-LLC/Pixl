@@ -1,123 +1,215 @@
-﻿using ImGuiNET;
+﻿using EntitiesDb;
+using ImGuiNET;
+using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Numerics;
 
 namespace Pixl.Editor;
 
-internal sealed class HierarchyWindow : IEditorWindow
+internal sealed class HierarchyWindow : EditorWindow
 {
     private readonly Scene _scene;
-    private uint _selectedEntityId;
+    private readonly List<uint> _selectedEntities = new();
+    private readonly List<int> _selectedIndices = new();
+    private readonly List<uint> _entityList = new();
+    private readonly List<(int, int)> _rangeSelect = new();
+    private readonly EntityLayout _createLayout;
+    private readonly PropertiesWindow _properties;
     private NameSystem? _nameSystem;
-    private TransformSystem? _transformSystem;
-    private float _childRatio = 0.3f;
-    private bool _open = true;
+    private int _listLength = 0;
+    private uint _createdEntityId;
+    private uint _destroyEntityId;
+    private uint _clickedEntityId;
 
-    public HierarchyWindow(Scene scene)
+    public HierarchyWindow(Scene scene, PropertiesWindow properties)
     {
         _scene = scene;
+        _properties = properties;
+        Open = true;
+        _createLayout = EntityLayoutBuilder.Create()
+            .Add<Transform>()
+            .Add<Editable>()
+            .Build();
+        _createLayout.Set(Transform.Default);
     }
 
-    public string Name => "Hierarchy";
-    public bool Open
-    {
-        get => _open;
-        set => _open = value;
-    }
+    public override string Name => "Hierarchy";
 
-    public void SubmitUI()
+    protected override void OnUI()
     {
-        if (!ImGui.Begin(Name, ref _open))
+        for (int i = 0; i < _selectedEntities.Count; i++)
         {
-            return;
+            var entity = _selectedEntities[i];
+            if (_scene.Entities.EntityExists(entity)) continue;
+            _selectedEntities.RemoveAt(i);
+            _selectedIndices.RemoveAt(i);
+            i--;
         }
 
         _nameSystem = _scene.GetSystem<NameSystem>();
-        _transformSystem = _scene.GetSystem<TransformSystem>();
-        var viewSize = ImGui.GetContentRegionAvail().Y - 5;
-        if (ImGui.BeginChild("Canvas Region", new Vector2(0, viewSize * _childRatio), false, ImGuiWindowFlags.HorizontalScrollbar))
+
+        if (ImGui.Button("Create"))
         {
-            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0, 0));
-            ImGui.TextDisabled("Canvas");
-            ImGui.PopStyleVar();
-            ImGui.Separator();
-
-            _scene.Entities.ForEach((uint id, ref CanvasTransform transform) =>
-            {
-                if (transform.SyncedParentId != 0)
-                {
-                    return; // this object will get rendered with its hierarchy
-                }
-
-                SubmitEntity(id);
-            });
-
-            ImGui.EndChild();
+            _selectedEntities.Clear();
+            _selectedIndices.Clear();
+            _createdEntityId = _scene.Entities.CreateEntity(_createLayout);
         }
 
-        if (ImGui.BeginChild("World Region", new Vector2(0, viewSize * (1 - _childRatio)), false, ImGuiWindowFlags.HorizontalScrollbar))
+        ImGui.SameLine();
+        if (ImGui.Button("Destroy"))
         {
-            var pos = ImGui.GetCursorPos();
-            ImGui.TextDisabled("World");
-            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(0, 0));
-            ImGui.SetCursorPos(pos);
-            ImGui.InvisibleButton("Resize", new Vector2(-1, 12));
-            ImGui.PopStyleVar();
-            if (ImGui.IsItemHovered())
+            foreach (var entity in _selectedEntities)
             {
-                ImGui.SetMouseCursor(ImGuiMouseCursor.ResizeNS);
+                _scene.Entities.DestroyEntity(entity);
             }
-
-            if (ImGui.IsItemActive() &&
-                viewSize > 0)
-            {
-                var delta = ImGui.GetIO().MouseDelta.Y;
-                var perc = delta / viewSize;
-                _childRatio = Math.Clamp(_childRatio + perc, 0.01f, 0.99f);
-            }
-            ImGui.Separator();
-
-            _scene.Entities.ForEach((uint id, ref Transform transform) =>
-            {
-                if (transform.SyncedParentId != 0)
-                {
-                    return; // this object will get rendered with its hierarchy
-                }
-
-                SubmitEntity(id);
-            });
-
-            ImGui.EndChild();
+            _selectedEntities.Clear();
+            _selectedIndices.Clear();
         }
 
-        ImGui.End();
+        ImGui.Separator();
+
+        if (ImGui.BeginChild("Scroll Region", new Vector2(0, ImGui.GetContentRegionAvail().Y), false, ImGuiWindowFlags.HorizontalScrollbar))
+        {
+            _scene.Entities.With<Editable>().ForEach((in Entity entity) =>
+            {
+                ref var transform = ref entity.TryGetComponent<Transform>(out var found);
+                SubmitEntity(in entity);
+            });
+            PostEntities();
+            ImGui.EndChild();
+        }
     }
 
-    private void SubmitEntity(uint id)
+    private void PostEntities()
     {
-        var name = _nameSystem?.GetName(id) ?? "Name Error";
-        var children = _transformSystem?.GetChildren(id) ?? Array.Empty<uint>();
+        _listLength = 0;
+        _createdEntityId = 0;
+        RangeSelect();
 
-        var flags = ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.SpanAvailWidth;
-        if (_selectedEntityId == id)
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left))
         {
-            flags |= ImGuiTreeNodeFlags.Selected;
+            _clickedEntityId = 0;
         }
+        if (_destroyEntityId != 0)
+        {
+            _scene.Entities.DestroyEntity(_destroyEntityId);
+            foreach (var entityId in _selectedEntities)
+            {
+                _scene.Entities.DestroyEntity(entityId);
+            }
+            _destroyEntityId = 0;
+            _selectedEntities.Clear();
+            _selectedIndices.Clear();
+        }
+    }
 
-        if (children.Count == 0)
+    private void RangeSelect()
+    {
+        for (int i = 0; i < _rangeSelect.Count; i++)
         {
-            flags |= ImGuiTreeNodeFlags.Leaf | ImGuiTreeNodeFlags.NoTreePushOnOpen;
+            var (start, end) = _rangeSelect[i];
+            var dif = end - start;
+            var direction = Math.Sign(dif);
+            var count = Math.Abs(dif);
+            for (int j = 0; j < count; j++)
+            {
+                var index = start + j * direction;
+                var entityId = _entityList[index];
+                if (!_selectedEntities.Contains(entityId))
+                {
+                    _selectedEntities.Add(entityId);
+                    _selectedIndices.Add(index);
+                }
+            }
         }
+        _rangeSelect.Clear();
+    }
+
+    private unsafe void SubmitEntity(in Entity entity)
+    {
+        int listIndex = _listLength++;
+        if (_entityList.Count > listIndex) _entityList[listIndex] = entity.Id;
+        else _entityList.Add(entity.Id);
+
+        var selectedIndex = _selectedEntities.IndexOf(entity.Id);
+
+        var name = _nameSystem?.GetName(entity.Id) ?? "No Name";
+        var flags = ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf;
+        if (selectedIndex >= 0) flags |= ImGuiTreeNodeFlags.Selected;
 
         var nodeOpen = ImGui.TreeNodeEx(name, flags);
-        if (ImGui.IsItemClicked())
+        if (ImGui.BeginPopupContextItem())
         {
-            _selectedEntityId = id;
+            if (ImGui.Selectable("Destroy"))
+            {
+                _destroyEntityId = entity.Id;
+                if (selectedIndex < 0)
+                {
+                    _selectedEntities.Clear();
+                    _selectedIndices.Clear();
+                }
+            }
+            ImGui.EndPopup();
+        }
+
+        if (_createdEntityId == entity.Id)
+        {
+            _selectedEntities.Add(entity.Id);
+            _selectedIndices.Add(listIndex);
+        }
+        else if (ImGui.IsItemClicked())
+        {
+            _clickedEntityId = entity.Id;
+        }
+        else if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) &&
+            ImGui.IsItemHovered() &&
+            _clickedEntityId == entity.Id)
+        {
+            var shiftDown = ImGui.GetIO().KeyShift;
+            var ctrlDown = ImGui.GetIO().KeyCtrl;
+            if (shiftDown &&
+                _selectedIndices.Count > 0)
+            {
+                _rangeSelect.Add((_selectedIndices[^1], listIndex));
+            }
+
+            if (!shiftDown &&
+                !ctrlDown)
+            {
+                _selectedEntities.Clear();
+                _selectedIndices.Clear();
+                selectedIndex = -1;
+            }
+
+            if (selectedIndex < 0)
+            {
+                _selectedEntities.Add(entity.Id);
+                _selectedIndices.Add(listIndex);
+                _properties.SelectedObject = entity.Id;
+            }
+            else if (!shiftDown)
+            {
+                _selectedEntities.RemoveAt(selectedIndex);
+                _selectedIndices.RemoveAt(selectedIndex);
+            }
+        }
+
+        if (_selectedEntities.Count != 0 &&
+            ImGui.BeginDragDropSource())
+        {
+            var id = entity.Id;
+            ImGui.SetDragDropPayload("EntityId", (nint)(&id), sizeof(uint), ImGuiCond.Once);
+            for (int i = 0; i < 5 && i < _selectedEntities.Count; i++)
+            {
+                var selectedName = _nameSystem?.GetName(_selectedEntities[_selectedEntities.Count - i - 1]) ?? "No Name";
+                if (i == 0) ImGui.Text(selectedName);
+                else ImGui.TextDisabled(selectedName);
+            }
+            if (_selectedEntities.Count > 5) ImGui.Text($"{_selectedEntities.Count - 5} more...");
+            ImGui.EndDragDropSource();
         }
 
         if (!nodeOpen) return;
-        foreach (var child in children)
-        {
-            SubmitEntity(child);
-        }
+        ImGui.TreePop();
     }
 }

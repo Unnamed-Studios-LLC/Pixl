@@ -1,6 +1,6 @@
 ﻿namespace Pixl;
 
-public struct CanvasTransform
+public struct CanvasTransform : IComponent
 {
     public Vec2 Position;
     public Vec3 Rotation;

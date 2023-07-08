@@ -1,6 +1,6 @@
 ﻿namespace Pixl;
 
-public struct Canvas
+public struct Canvas : IComponent
 {
     public Vec2 Scale;
 

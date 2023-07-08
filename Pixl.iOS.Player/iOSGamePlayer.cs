@@ -4,7 +4,7 @@ namespace Pixl.iOS.Player;
 
 internal sealed class iOSGamePlayer : IPlayer
 {
-	public iOSGamePlayer(AppWindow window)
+	public iOSGamePlayer(Window window)
 	{
         Window = window;
 
@@ -18,7 +18,7 @@ internal sealed class iOSGamePlayer : IPlayer
 
     public string AssetsPath { get; }
 
-    public AppWindow Window { get; }
+    public Window Window { get; }
 
     public void Log(object @object)
     {

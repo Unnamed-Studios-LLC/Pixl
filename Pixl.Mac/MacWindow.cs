@@ -15,7 +15,7 @@ using Veldrid;
 
 namespace Pixl.Mac;
 
-internal class MacWindow : AppWindow, INSWindowDelegate
+internal class MacWindow : Window, INSWindowDelegate
 {
     private readonly NSWindow _window;
     private readonly MacView _view;

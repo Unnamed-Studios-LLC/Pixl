@@ -4,33 +4,22 @@ using System.Runtime.InteropServices;
 
 namespace Pixl.Editor;
 
-internal sealed class ConsoleWindow : IEditorWindow
+internal sealed class ConsoleWindow : EditorWindow
 {
     public readonly MemoryLogger _memoryLogger;
     private string _searchText = string.Empty;
     private uint? _selectedLogId = null;
     private float _childRatio = 0.65f;
-    private bool _open = true;
 
     public ConsoleWindow(MemoryLogger memoryLogger)
     {
         _memoryLogger = memoryLogger;
     }
 
-    public string Name => "Console";
-    public bool Open
-    {
-        get => _open;
-        set => _open = value;
-    }
+    public override string Name => "Console";
 
-    public void SubmitUI()
+    protected override void OnUI()
     {
-        if (!ImGui.Begin(Name, ref _open))
-        {
-            return;
-        }
-
         var windowSize = ImGui.GetWindowSize();
 
         ImGui.InputText("Search", ref _searchText, 100);
@@ -104,11 +93,9 @@ internal sealed class ConsoleWindow : IEditorWindow
             }
             else
             {
-                ImGui.TextDisabled("(Select an item to view it's details)");
+                ImGui.TextDisabled("(Select an item to view its details)");
             }
             ImGui.EndChild();
         }
-
-        ImGui.End();
     }
 }

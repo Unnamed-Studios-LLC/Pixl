@@ -1,6 +1,6 @@
 ﻿namespace Pixl;
 
-internal sealed class MemoryLogger : ILogger
+internal sealed class MemoryLogger : Logger
 {
     private readonly List<LogEntry> _logs = new();
     private readonly int _maxCount;
@@ -23,12 +23,12 @@ internal sealed class MemoryLogger : ILogger
         }
     }
 
-    public void Flush()
+    public override void Flush()
     {
         // no flush needed for memory logging
     }
 
-    public void Log(object @object)
+    public override void Log(object @object)
     {
         var stacktrace = Environment.StackTrace;
         var formatted = FileLogger.FormatObject(@object);

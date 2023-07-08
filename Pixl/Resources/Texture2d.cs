@@ -33,7 +33,7 @@ public sealed class Texture2d : GraphicsResource
     internal TextureView? TextureView { get; private set; }
 
     /// <summary>
-    /// Creates a <see cref="Texture2d"/>. <inheritdoc cref="Application.RequireMainThread"/>
+    /// Creates a <see cref="Texture2d"/>. <inheritdoc cref="App.RequireMainThread"/>
     /// </summary>
     /// <param name="size"></param>
     /// <param name="sampleMode">The initial sample mode of the texture.</param>
@@ -41,9 +41,9 @@ public sealed class Texture2d : GraphicsResource
     /// <param name="normalized">If pixel components should be 0 -> 1 normalized in shaders.</param>
     public static Texture2d Create(Int2 size, SampleMode sampleMode, ColorFormat colorFormat)
     {
-        Application.RequireMainThread();
+        Game.Shared.RequireMainThread();
         var texture2d = new Texture2d(size, sampleMode, colorFormat, true);
-        var resources = Game.Current.Resources;
+        var resources = Game.Shared.Resources;
         resources.Add(texture2d);
         return texture2d;
     }
@@ -57,24 +57,24 @@ public sealed class Texture2d : GraphicsResource
     /// <param name="normalized">If pixel components should be 0 -> 1 normalized in shaders.</param>
     public static Texture2d CreateFromFile(Stream fileStream, SampleMode sampleMode, ColorFormat colorFormat)
     {
-        Application.RequireMainThread();
+        Game.Shared.RequireMainThread();
         var texture2d = colorFormat switch
         {
             ColorFormat.R8 => LoadFromFile<A8>(fileStream, sampleMode, colorFormat),
             _ => LoadFromFile<Rgba32>(fileStream, sampleMode, colorFormat)
         };
 
-        var resources = Game.Current.Resources;
+        var resources = Game.Shared.Resources;
         resources.Add(texture2d);
         return texture2d;
     }
 
     /// <summary>
-    /// Commits changes to color data to the GPU texture. <inheritdoc cref="Application.RequireMainThread"/>
+    /// Commits changes to color data to the GPU texture. <inheritdoc cref="App.RequireMainThread"/>
     /// </summary>
     public void Apply()
     {
-        Application.RequireMainThread();
+        Game.Shared.RequireMainThread();
         if (_data == null) throw ReadWriteDisabledException();
         if (Graphics == null) return;
         UpdateTexture(Graphics);
@@ -97,6 +97,13 @@ public sealed class Texture2d : GraphicsResource
         var data = GetData();
         var span = MemoryMarshal.Cast<byte, T>(data);
         return span;
+    }
+
+    internal void ApplyInternal()
+    {
+        if (_data == null) throw ReadWriteDisabledException();
+        if (Graphics == null) return;
+        UpdateTexture(Graphics);
     }
 
     internal IEnumerable<BindableResource> GetBindableResources(Graphics graphics)

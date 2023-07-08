@@ -1,5 +1,4 @@
-﻿using System;
-using Veldrid;
+﻿using Veldrid;
 
 namespace Pixl;
 
@@ -27,7 +26,7 @@ internal sealed class Graphics
         };
     }
 
-    public void Start(Resources resources, AppWindow window, GraphicsApi graphicsApi)
+    public void Start(Resources resources, Window window, GraphicsApi graphicsApi)
     {
         var options = new GraphicsDeviceOptions
         {
@@ -87,14 +86,7 @@ internal sealed class Graphics
     public void SwapBuffers()
     {
         if (_device == null) throw SetupException();
-        try
-        {
-            _device.SwapBuffers();
-        }
-        catch (Exception e)
-        {
-            Debug.Log(e);
-        }
+        _device.SwapBuffers();
     }
 
     public void UpdateWindowSize(Int2 windowSize)

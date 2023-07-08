@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Windows.Forms;
 using Veldrid;
 using WinApi.Gdi32;
 using WinApi.Kernel32;
@@ -12,14 +14,17 @@ using WinApi.User32;
 
 namespace Pixl.Win;
 
-internal class WinWindow : AppWindow
+internal class WinWindow : Window, IWin32Window
 {
     private const int TimerId = 1;
 
-    private readonly IntPtr _instanceHandle;
-    private readonly IntPtr _hwnd;
     private readonly WindowProc _windowProc;
+    private readonly ManualResetEvent _windowCreated = new(false);
+    private IntPtr _instanceHandle;
+    private IntPtr _hwnd;
+    private SwapchainSource? _swapchainSource;
 
+    private Thread? _windowThread;
     private Int2 _clientSize;
     private WindowStyle _windowStyle;
     private string _windowTitle;
@@ -31,11 +36,68 @@ internal class WinWindow : AppWindow
     {
         _clientSize = size;
         _windowStyle = WindowStyle.Windowed;
-        _instanceHandle = Kernel32Methods.GetModuleHandle(IntPtr.Zero);
-        _windowProc = ProcessWindowMessage;
         _windowTitle = title;
+        _windowProc = ProcessWindowMessage;
+    }
 
-        var fullWindowSize = size.ToWindowedSize();
+    public int ExitCode { get; set; }
+    public bool Timer { get; set; } = false;
+
+    public override Int2 MousePosition => GetMousePosition();
+
+    public override Int2 Size
+    {
+        get => _clientSize;
+        set => throw new NotImplementedException();
+    }
+    public override WindowStyle Style
+    {
+        get => _windowStyle;
+        set => throw new NotImplementedException();
+    }
+    public override SwapchainSource SwapchainSource => _swapchainSource ?? throw new Exception("Window not created!");
+    public override string Title
+    {
+        get => _windowTitle;
+        set => SetWindowTitle(value);
+    }
+    public override CursorState CursorState
+    {
+        get => _cursorState;
+        set => SetCursorState(value);
+    }
+
+    public nint Handle => _hwnd;
+
+    public override void PushEvent(in WindowEvent @event)
+    {
+        switch (@event.Type)
+        {
+            case WindowEventType.MouseMove:
+                UpdateCursor();
+                break;
+        }
+
+        base.PushEvent(@event);
+    }
+
+    public override void Start()
+    {
+        _windowThread = new Thread(Run);
+        _windowThread.Start();
+        _windowCreated.WaitOne();
+    }
+
+    public override void Stop()
+    {
+        User32Methods.PostQuitMessage(ExitCode);
+        _windowThread?.Join();
+    }
+
+    private void CreateWindow()
+    {
+        _instanceHandle = Kernel32Methods.GetModuleHandle(IntPtr.Zero);
+        var fullWindowSize = _clientSize.ToWindowedSize();
         var wc = new WindowClassEx
         {
             Size = (uint)Marshal.SizeOf<WindowClassEx>(),
@@ -65,7 +127,7 @@ internal class WinWindow : AppWindow
             throw new Exception("Failed to create window");
         }
 
-        SwapchainSource = SwapchainSource.CreateWin32(_hwnd, _instanceHandle);
+        _swapchainSource = SwapchainSource.CreateWin32(_hwnd, _instanceHandle);
 
         User32Methods.ShowWindow(_hwnd, ShowWindowCommands.SW_SHOWNORMAL);
         User32Methods.UpdateWindow(_hwnd);
@@ -76,63 +138,7 @@ internal class WinWindow : AppWindow
         LoadSystemCursor(CursorState.Resize, SystemCursor.IDC_SIZEALL);
         LoadSystemCursor(CursorState.ResizeHorizontal, SystemCursor.IDC_SIZEWE);
         LoadSystemCursor(CursorState.ResizeVertical, SystemCursor.IDC_SIZENS);
-    }
-
-    public int ExitCode { get; set; }
-    public bool Timer { get; set; } = false;
-
-    public override Int2 MousePosition => GetMousePosition();
-
-    public override Int2 Size
-    {
-        get => _clientSize;
-        set => throw new NotImplementedException();
-    }
-    public override WindowStyle Style
-    {
-        get => _windowStyle;
-        set => throw new NotImplementedException();
-    }
-    public override SwapchainSource SwapchainSource { get; }
-    public override string Title
-    {
-        get => _windowTitle;
-        set => SetWindowTitle(value);
-    }
-    public override CursorState CursorState
-    {
-        get => _cursorState;
-        set => SetCursorState(value);
-    }
-
-    public override void PushEvent(in WindowEvent @event)
-    {
-        switch (@event.Type)
-        {
-            case WindowEventType.MouseMove:
-                UpdateCursor();
-                break;
-        }
-
-        base.PushEvent(@event);
-    }
-
-    public void Run()
-    {
-        OnPaint();
-
-        int result;
-        while ((result = User32Methods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
-        {
-            User32Methods.TranslateMessage(ref msg);
-            User32Methods.DispatchMessage(ref msg);
-        }
-        PushEvent(new WindowEvent(WindowEventType.Quit, result));
-    }
-
-    public void Stop()
-    {
-        User32Methods.PostQuitMessage(ExitCode);
+        _windowCreated.Set();
     }
 
     private Int2 GetMousePosition()
@@ -150,24 +156,26 @@ internal class WinWindow : AppWindow
         _systemCursors[cursorState] = cursorId;
     }
 
-    private void OnPaint()
+    private void OnChar(int character)
     {
-        PushEvent(new WindowEvent(WindowEventType.Render));
+        PushEvent(new WindowEvent(WindowEventType.Character, character));
     }
 
     private void OnKeyDown(int virtualKeyCode, int flags)
     {
         var isDown = ((flags >> 30) & 1) == 1;
         if (isDown) return;
+        var isExtended = ((flags >> 24) & 1) == 1;
 
-        var keyCode = KeyHelper.GetKeyCode(virtualKeyCode);
+        var keyCode = KeyHelper.GetKeyCode(virtualKeyCode, isExtended);
         if (keyCode == KeyCode.None) return;
         PushEvent(new WindowEvent(WindowEventType.KeyDown, (int)keyCode));
     }
 
     private void OnKeyUp(int virtualKeyCode, int flags)
     {
-        var keyCode = KeyHelper.GetKeyCode(virtualKeyCode);
+        var isExtended = ((flags >> 24) & 1) == 1;
+        var keyCode = KeyHelper.GetKeyCode(virtualKeyCode, isExtended);
         if (keyCode == KeyCode.None) return;
         PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)keyCode));
     }
@@ -212,6 +220,11 @@ internal class WinWindow : AppWindow
         PushEvent(new WindowEvent(WindowEventType.Scroll, 0, *deltaFBits));
     }
 
+    private void OnPaint()
+    {
+        PushEvent(new WindowEvent(WindowEventType.Render));
+    }
+
     private void OnSize(int action, int packedSize)
     {
         var updateSize = action switch
@@ -234,7 +247,10 @@ internal class WinWindow : AppWindow
             switch (wmg)
             {
                 case WM.CLOSE:
-                    Stop();
+                    User32Methods.PostQuitMessage(ExitCode);
+                    break;
+                case WM.CHAR:
+                    OnChar((int)wParam.ToInt64());
                     break;
                 case WM.KEYDOWN:
                     OnKeyDown((int)wParam.ToInt64(), (int)lParam.ToInt64());
@@ -281,6 +297,19 @@ internal class WinWindow : AppWindow
             }
         }
         return User32Methods.DefWindowProc(hwnd, umsg, wParam, lParam);
+    }
+
+    private void Run()
+    {
+        CreateWindow();
+        OnPaint();
+        int result;
+        while ((result = User32Methods.GetMessage(out var msg, IntPtr.Zero, 0, 0)) > 0)
+        {
+            User32Methods.TranslateMessage(ref msg);
+            User32Methods.DispatchMessage(ref msg);
+        }
+        PushEvent(new WindowEvent(WindowEventType.Quit, result));
     }
 
     private void SetCursorState(CursorState value)

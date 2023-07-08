@@ -23,11 +23,11 @@ internal sealed class VertexRenderer : GraphicsResource
     private ushort _vertexCount;
     private uint _stride;
 
-    public VertexRenderer(Resources resources, DefaultResources defaultResources, ushort indexBatchSize, int vertexBatchByteSize)
+    public VertexRenderer(Resources resources, ushort indexBatchSize, int vertexBatchByteSize)
     {
         _resources = resources;
-        Texture = _nullTexture = defaultResources.NullTexture;
-        _errorMaterial = defaultResources.ErrorMaterial;
+        Texture = _nullTexture = resources.Default.NullTexture;
+        _errorMaterial = resources.Default.ErrorMaterial;
         _indexBuffer = new ushort[indexBatchSize];
         _vertexBuffer = new byte[vertexBatchByteSize];
     }
@@ -56,6 +56,20 @@ internal sealed class VertexRenderer : GraphicsResource
         _stride = _material.VertexStride;
         Texture = _nullTexture;
         ClipRect = null;
+    }
+
+    public void Clear(Color32 color)
+    {
+        if (_graphics == null || _commandList == null || _frameBuffer == null) throw BeginNotCalledException();
+        EndBatch();
+
+        _commandList.Begin();
+        _commandList.SetFramebuffer(_frameBuffer);
+        _commandList.ClearColorTarget(0, new RgbaFloat(color.R / 255f, color.G / 255f, color.B / 255f, color.A / 255f));
+        _commandList.ClearDepthStencil(0);
+        _commandList.End();
+
+        _graphics.Submit(_commandList);
     }
 
     public void ClearDepth()

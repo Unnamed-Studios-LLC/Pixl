@@ -1,25 +1,41 @@
-﻿using ImGuiNET;
+﻿namespace Pixl.Editor;
 
-namespace Pixl.Editor;
-
-internal sealed class PropertiesWindow : IEditorWindow
+internal sealed class PropertiesWindow : EditorWindow
 {
-    private bool _open = true;
+    private readonly Editor _editor;
+    private object? _selectedObject;
+    private ObjectInspector? _selectedInspector;
 
-    public string Name => "Properties";
-    public bool Open
+    public PropertiesWindow(Editor editor)
     {
-        get => _open;
-        set => _open = value;
+        _editor = editor ?? throw new ArgumentNullException(nameof(editor));
     }
 
-    public void SubmitUI()
-    {
-        if (!ImGui.Begin(Name, ref _open))
-        {
-            return;
-        }
+    public override string Name => "Properties";
 
-        ImGui.End();
+    public object? SelectedObject
+    {
+        get => _selectedObject;
+        set => SetSelectedObject(value);
+    }
+
+    protected override void OnUI()
+    {
+        if (_selectedObject != null &&
+            _selectedInspector != null)
+        {
+            _selectedInspector.SubmitUI(_editor, _selectedObject.GetType().Name, _selectedObject);
+        }
+    }
+
+    private void SetSelectedObject(object? value)
+    {
+        if (_selectedObject == value) return;
+        if (value is uint)
+        {
+            _selectedInspector = new EntityInspector();
+        }
+        else _selectedInspector = value == null ? null : new DefaultObjectInspector(value.GetType());
+        _selectedObject = value;
     }
 }

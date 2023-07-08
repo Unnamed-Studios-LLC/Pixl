@@ -23,7 +23,7 @@ public abstract class GraphicsResource : Resource
     {
         base.OnAdd();
 
-        var graphics = Game.Current.Graphics;
+        var graphics = Resources!.Graphics;
         Create(graphics);
     }
 

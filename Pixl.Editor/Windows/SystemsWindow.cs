@@ -2,41 +2,29 @@
 
 namespace Pixl.Editor;
 
-internal sealed class SystemsWindow : IEditorWindow
+internal sealed class SystemsWindow : EditorWindow
 {
     private readonly Scene _scene;
-    private ComponentSystem? _selectedSystem;
-    private bool _open = true;
+    private readonly PropertiesWindow _properties;
 
-    public SystemsWindow(Scene scene)
+    public SystemsWindow(Scene scene, PropertiesWindow properties)
     {
         _scene = scene;
+        _properties = properties;
     }
 
-    public string Name => "Systems";
-    public bool Open
-    {
-        get => _open;
-        set => _open = value;
-    }
+    public override string Name => "Systems";
 
-    public void SubmitUI()
+    protected override void OnUI()
     {
-        if (!ImGui.Begin(Name, ref _open))
-        {
-            return;
-        }
-
         var systems = _scene.GetSystems();
         foreach (var system in systems)
         {
             if (system == null) continue;
-            if (ImGui.Selectable(system.GetType().Name, _selectedSystem == system))
+            if (ImGui.Selectable(system.GetType().Name, _properties.SelectedObject == system))
             {
-                _selectedSystem = system;
+                _properties.SelectedObject = system;
             }
         }
-
-        ImGui.End();
     }
 }

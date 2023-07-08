@@ -2,7 +2,11 @@
 
 public sealed class FragmentShader : Shader
 {
-    public FragmentShader(string filePath) : this(AssetHandle.CreateAbsolutePath(filePath)) { }
+    internal FragmentShader(Files files, FileHandle assetHandle) : base(files, assetHandle) { }
 
-    internal FragmentShader(AssetHandle assetHandle) : base(assetHandle) { }
+    public static FragmentShader Create(string filePath)
+    {
+        Game.Shared.RequireMainThread();
+        return new FragmentShader(Game.Shared.Files, FileHandle.CreateExternal(filePath));
+    }
 }

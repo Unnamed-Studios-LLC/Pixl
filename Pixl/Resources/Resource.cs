@@ -4,8 +4,10 @@ public abstract class Resource : IDisposable
 {
     private bool _disposed;
 
-    public uint Id { get; internal set; }
+    public long Id { get; internal set; }
+    public string Name { get; internal set; } = string.Empty;
 
+    internal Asset? Asset { get; set; }
     internal Resources? Resources { get; set; }
 
     ~Resource() => DoDispose();

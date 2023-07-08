@@ -2,6 +2,7 @@
 
 public enum GraphicsApi
 {
+    None,
     OpenGlEs,
     OpenGl,
     DirectX,

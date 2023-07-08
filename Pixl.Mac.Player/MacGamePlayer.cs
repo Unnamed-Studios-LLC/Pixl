@@ -6,7 +6,7 @@ namespace Pixl.Mac.Player;
 
 internal sealed class MacGamePlayer : IPlayer
 {
-	public MacGamePlayer(AppWindow window)
+	public MacGamePlayer(Window window)
 	{
 		Window = window;
 
@@ -22,10 +22,10 @@ internal sealed class MacGamePlayer : IPlayer
 
     public int ExitCode { get; set; }
 
-    public AppWindow Window { get; }
+    public Window Window { get; }
 
     public string DataPath => throw new NotImplementedException();
     public string AssetsPath { get; }
-    public ILogger Logger { get; }
+    public Logger Logger { get; }
 }
 

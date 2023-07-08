@@ -1,5 +1,4 @@
 ﻿using Pixl;
-using Pixl.Demo;
 using Pixl.Win;
 using Pixl.Win.Player;
 using System;
@@ -11,8 +10,8 @@ try
 {
     WinWindow window = new("Pixl Game", new Int2(1000, 800));
     WinGamePlayer player = new(window);
-    Resources resources = new();
     Graphics graphics = new();
+    Resources resources = new(graphics);
 
     crashPath = Path.Combine(player.DataPath, crashPath);
     graphics.Start(resources, window, GraphicsApi.DirectX);

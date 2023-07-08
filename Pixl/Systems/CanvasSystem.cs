@@ -9,9 +9,9 @@ public sealed class CanvasSystem : ComponentSystem
     {
         Order = 1100;
 
-        var resources = Game.Current.DefaultResources;
-        Material = resources.DefaultMaterial;
-        WorldToClipMatrix = resources.WorldToClipMatrix;
+        var defaultResources = Game.Shared.Resources.Default;
+        Material = defaultResources.DefaultMaterial;
+        WorldToClipMatrix = defaultResources.WorldToClipMatrix;
     }
 
     public CanvasSystem(Material? material, Property? worldToClipMatrix) : this()
@@ -25,7 +25,7 @@ public sealed class CanvasSystem : ComponentSystem
         renderer.ClearDepth();
         Scene.Entities.ForEach((ref Canvas canvas) =>
         {
-            var windowSize = (Int2)(Window.Size / canvas.Scale);
+            var windowSize = (Int2)(Screen.Size / canvas.Scale);
             var remainder = new Int2(windowSize.X % 2, windowSize.Y % 2);
             var half = windowSize / 2;
 
@@ -40,7 +40,7 @@ public sealed class CanvasSystem : ComponentSystem
             var worldToClip = projectionMatrix * Matrix4x4.Scale(new Vec3(canvas.Scale.X, canvas.Scale.Y, 1));
             WorldToClipMatrix?.Set(worldToClip);
 
-            var game = Game.Current;
+            var game = Game.Shared;
             renderer.BeginBatch(Material);
             Scene.Entities.ForEach((ref Sprite sprite, ref CanvasTransform transform) =>
             {

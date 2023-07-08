@@ -16,7 +16,6 @@
     <CreatePackage>false</CreatePackage>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Pixl.Demo\Pixl.Demo.csproj" />
     <ProjectReference Include="..\Pixl.iOS\Pixl.iOS.csproj" />
     <ProjectReference Include="..\Pixl\Pixl.csproj" />
   </ItemGroup>

@@ -7,16 +7,30 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ImGui.NET" Version="1.89.5" />
-    <PackageReference Include="Veldrid" Version="4.9.0" />
+    <None Remove="InternalAssets\fa-solid-900.ttf" />
+    <None Remove="InternalAssets\gui.frag" />
+    <None Remove="InternalAssets\gui.vert" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="InternalAssets\fa-solid-900.ttf" />
+    <EmbeddedResource Include="InternalAssets\gui.frag">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="InternalAssets\gui.vert">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ImGui.NET" Version="1.89.5" PrivateAssets="compile" />
+    <PackageReference Include="Microsoft.Build" Version="17.6.3" />
+    <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Pixl\Pixl.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Game\" />
   </ItemGroup>
 
 </Project>
