@@ -23,6 +23,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.iOS.Player", "Pixl.iOS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.Mac.Editor", "Pixl.Mac.Editor\Pixl.Mac.Editor.csproj", "{C44F00B7-4841-45CE-8E11-2FCAE9D6ABD6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Pixl.SourceGenerators", "Pixl.SourceGenerators\Pixl.SourceGenerators.csproj", "{FD901D9A-2634-49DD-95A7-78BB84C43430}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -153,6 +155,18 @@ Global
 		{C44F00B7-4841-45CE-8E11-2FCAE9D6ABD6}.Release|iPhone.Build.0 = Release|Any CPU
 		{C44F00B7-4841-45CE-8E11-2FCAE9D6ABD6}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
 		{C44F00B7-4841-45CE-8E11-2FCAE9D6ABD6}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|iPhone.ActiveCfg = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|iPhone.Build.0 = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|iPhoneSimulator.ActiveCfg = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Debug|iPhoneSimulator.Build.0 = Debug|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|iPhone.ActiveCfg = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|iPhone.Build.0 = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|iPhoneSimulator.ActiveCfg = Release|Any CPU
+		{FD901D9A-2634-49DD-95A7-78BB84C43430}.Release|iPhoneSimulator.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

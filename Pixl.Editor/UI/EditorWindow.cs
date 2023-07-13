@@ -14,6 +14,9 @@ internal abstract class EditorWindow : IEditorUI
         set => _open = value;
     }
     public bool Borderless { get; set; }
+    public bool UnsavedChanges { get; set; }
+
+    public virtual void Save() { }
 
     public void SubmitUI()
     {
@@ -25,7 +28,8 @@ internal abstract class EditorWindow : IEditorUI
             ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
         }
 
-        if (ImGui.Begin(Name, ref _open))
+        var flags = UnsavedChanges ? ImGuiWindowFlags.UnsavedDocument : ImGuiWindowFlags.None;
+        if (ImGui.Begin(Name, ref _open, flags))
         {
             OnUI();
             ImGui.End();

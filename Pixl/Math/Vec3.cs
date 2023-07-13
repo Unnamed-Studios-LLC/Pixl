@@ -2,14 +2,12 @@
 
 namespace Pixl
 {
-    [StructLayout(LayoutKind.Explicit)]
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Vec3
     {
-        [FieldOffset(0)]
         public float X;
-        [FieldOffset(4)]
         public float Y;
-        [FieldOffset(8)]
         public float Z;
 
         public Vec3(float x, float y, float z)

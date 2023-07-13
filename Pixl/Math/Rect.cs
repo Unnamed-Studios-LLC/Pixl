@@ -1,5 +1,6 @@
 ﻿namespace Pixl
 {
+    [Serializable]
     public struct Rect
     {
         public float X;

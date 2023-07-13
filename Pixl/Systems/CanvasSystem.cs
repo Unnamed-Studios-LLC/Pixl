@@ -22,6 +22,7 @@ public sealed class CanvasSystem : ComponentSystem
 
     internal override void OnRender(VertexRenderer renderer)
     {
+        /*
         renderer.ClearDepth();
         Scene.Entities.ForEach((ref Canvas canvas) =>
         {
@@ -67,5 +68,6 @@ public sealed class CanvasSystem : ComponentSystem
             });
             renderer.EndBatch();
         });
+        */
     }
 }

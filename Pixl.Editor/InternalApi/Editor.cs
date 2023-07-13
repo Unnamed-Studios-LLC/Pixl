@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using YamlDotNet.RepresentationModel;
 
 [assembly: InternalsVisibleTo("Pixl.Mac.Editor")]
 [assembly: InternalsVisibleTo("Pixl.Win.Editor")]
@@ -23,6 +24,7 @@ internal sealed class Editor : App
     private bool _gameFocused;
     private bool _firstUI = true;
     private EditorModal? _variableModal;
+    private EditorTask? _reloadTask;
 
     public Editor(Window window, Graphics graphics, Resources resources, Values values, Logger logger, Files files) : base(window, graphics, resources, values, logger, files)
     {
@@ -42,16 +44,16 @@ internal sealed class Editor : App
         Game.TargetRenderTexture = _gameRenderTexture;
         gameWindow.RenderTexture = _gameRenderTexture;
 
-        var properties = new PropertiesWindow(this);
+        var propertiesWindow = new PropertiesWindow(this);
+        var sceneWindow = new SceneWindow(Game.Scene, propertiesWindow, this);
+        SceneWindow = sceneWindow;
 
         _windows.Add(gameWindow);
-        _windows.Add(new SceneWindow(Game.Scene, resources, graphics));
-        _windows.Add(new EntitiesWindow(Game.Scene));
-        _windows.Add(new SystemsWindow(Game.Scene, properties));
-        _windows.Add(new HierarchyWindow(Game.Scene, properties));
+        _windows.Add(new ExplorerWindow(Game.Scene, resources, graphics));
+        _windows.Add(sceneWindow);
         _windows.Add(new ProjectWindow());
         _windows.Add(new ConsoleWindow(_memoryLogger));
-        _windows.Add(properties);
+        _windows.Add(propertiesWindow);
         _windows.Add(new TestWindow());
     }
 
@@ -59,6 +61,7 @@ internal sealed class Editor : App
     public Project? Project { get; private set; }
     public Game Game { get; }
     public GameWindow GameWindow { get; }
+    public SceneWindow SceneWindow { get; }
 
     public override bool ProcessEvents(Span<WindowEvent> events)
     {
@@ -129,7 +132,10 @@ internal sealed class Editor : App
             Project = new Project(projectDirectory);
             Game.Stop();
             Game.Start();
-            Game.Scene.AddDefaultSystems();
+            Game.Scene.AddSystem<CameraSystem>();
+            Game.Scene.AddSystem<NameSystem>();
+            Game.Scene.AddSystem<TransformSystem>();
+
             Window.Title = $"{Project.ProjectName} - Pixl Editor";
 
             EditorValues.AddRecentProject(projectDirectory);
@@ -163,7 +169,39 @@ internal sealed class Editor : App
 
     public override void Update()
     {
+        if (Project != null)
+        {
+            if (_reloadTask == null &&
+                Project.Source.ReloadAvailable)
+            {
+                // serialize scene
+                var documentList = new List<YamlDocument>();
+                Game.Scene.GetDocuments(documentList);
+                Game.Scene.Clear();
+
+                _reloadTask = new EditorTask("Reloading Assembly", false)
+                {
+                    Progress = 0,
+                    State = "Loading assembly dll..."
+                };
+                _reloadTask.SetTask(Task.Run(() => Project.Source.ReloadUserAssemblyAsync(_reloadTask)),
+                    () =>
+                    {
+                        _reloadTask = null;
+                        Game.Scene.LoadDocuments(documentList);
+                    });
+                PushTask(_reloadTask);
+            }
+        }
         Game.Run();
+    }
+
+    private IEnumerable<EditorModal> GetModals()
+    {
+        yield return _errorModal;
+        yield return _taskModal;
+        if (_variableModal != null) yield return _variableModal;
+        yield return _startupModal;
     }
 
     private void MainDockspace()
@@ -182,7 +220,6 @@ internal sealed class Editor : App
         var dockRight = ImGuiInternal.DockBuilderSplitNode(id, ImGuiDir.Right, 0.25f, ref dummy, ref id);
         var dockBottom = ImGuiInternal.DockBuilderSplitNode(dockCenter, ImGuiDir.Down, 0.25f, ref dummy, ref dockCenter);
         var dockLeft = ImGuiInternal.DockBuilderSplitNode(dockCenter, ImGuiDir.Left, 0.25f, ref dummy, ref dockCenter);
-        var dockLeftDown = ImGuiInternal.DockBuilderSplitNode(dockLeft, ImGuiDir.Down, 0.3f, ref dummy, ref dockLeft);
 
         void dockWindow<T>(uint dockId)
         {
@@ -193,10 +230,8 @@ internal sealed class Editor : App
         }
 
         dockWindow<GameWindow>(dockCenter);
-        dockWindow<SceneWindow>(dockCenter);
-        dockWindow<EntitiesWindow>(dockLeft);
-        dockWindow<HierarchyWindow>(dockLeft);
-        dockWindow<SystemsWindow>(dockLeftDown);
+        dockWindow<ExplorerWindow>(dockCenter);
+        dockWindow<SceneWindow>(dockLeft);
         dockWindow<PropertiesWindow>(dockRight);
         dockWindow<ConsoleWindow>(dockBottom);
         dockWindow<ProjectWindow>(dockBottom);
@@ -213,6 +248,16 @@ internal sealed class Editor : App
             if (ImGui.MenuItem("New Scene", "Ctrl + N"))
             {
 
+            }
+
+            if (ImGui.MenuItem("Open Scene", "Ctrl + O"))
+            {
+                SceneWindow.OpenScene();
+            }
+
+            if (ImGui.MenuItem("Save", "Ctrl + S"))
+            {
+                Save();
             }
 
             ImGui.EndMenu();
@@ -232,6 +277,15 @@ internal sealed class Editor : App
         }
 
         ImGui.EndMainMenuBar();
+    }
+
+    private void Save()
+    {
+        foreach (var window in _windows)
+        {
+            if (window is not EditorWindow editorWindow) continue;
+            editorWindow.Save();
+        }
     }
 
     private void SubmitUI()
@@ -260,14 +314,6 @@ internal sealed class Editor : App
         }
 
         next?.Invoke();
-    }
-
-    private IEnumerable<EditorModal> GetModals()
-    {
-        yield return _errorModal;
-        yield return _taskModal;
-        if (_variableModal != null) yield return _variableModal;
-        yield return _startupModal;
     }
 
     private void SubmitWindows()

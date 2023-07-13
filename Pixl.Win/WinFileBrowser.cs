@@ -109,14 +109,43 @@ internal sealed class WinFileBrowser : FileBrowser
 
     public override string? Save(FileBrowserRequest request)
     {
-        using var dialog = new SaveFileDialog();
-        dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
-        dialog.Filter = GetFilter(in request);
-        dialog.FilterIndex = 0;
+        string? result = null;
+        void dialog()
+        {
+            using var dialog = new SaveFileDialog();
+            dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
+            dialog.Filter = GetFilter(in request);
+            dialog.FilterIndex = 0;
 
-        if (dialog.ShowDialog(_window) != DialogResult.OK) return null;
-        var result = dialog.FileName;
+            if (dialog.ShowDialog(_window) != DialogResult.OK) return;
+            result = dialog.FileName;
+        }
+        DialogThread(dialog);
         return result;
+    }
+
+    public override Task<string?> SaveAsync(FileBrowserRequest request)
+    {
+        var completionSource = new TaskCompletionSource<string?>();
+        string? result = null;
+        void dialog()
+        {
+            using var dialog = new SaveFileDialog();
+            dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
+            dialog.Filter = GetFilter(in request);
+            dialog.FilterIndex = 0;
+
+            if (dialog.ShowDialog(_window) != DialogResult.OK)
+            {
+                completionSource.SetResult(null);
+                return;
+            }
+
+            result = dialog.FileName;
+            completionSource.SetResult(dialog.FileName);
+        }
+        DialogThreadAsync(dialog);
+        return completionSource.Task;
     }
 
     public override string? SaveFolder(FileBrowserRequest request)

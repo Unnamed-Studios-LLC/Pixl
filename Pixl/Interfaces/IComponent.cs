@@ -1,5 +1,3 @@
 ﻿namespace Pixl;
 
-public interface IComponent
-{
-}
+public interface IComponent { }

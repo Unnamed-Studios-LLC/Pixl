@@ -24,6 +24,10 @@ internal abstract class EditorModal : IEditorUI
             ImGui.OpenPopup(Name);
             Open = ShouldOpen;
         }
+        else
+        {
+            Open = false;
+        }
 
         // Always center this window when appearing
         var center = ImGui.GetMainViewport().GetCenter();
@@ -32,6 +36,12 @@ internal abstract class EditorModal : IEditorUI
         var open = Open;
         if (ImGui.BeginPopupModal(Name, ref open, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.Modal | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize))
         {
+            if (!Open)
+            {
+                ImGui.CloseCurrentPopup();
+                return false;
+            }
+
             OnUI();
 
             next?.Invoke();

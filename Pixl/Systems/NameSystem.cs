@@ -5,24 +5,21 @@ namespace Pixl;
 
 public sealed class NameSystem : ComponentSystem
 {
+    internal const string TempPrefix = "Entity ";
+
     private readonly ConcurrentDictionary<uint, string> _names = new();
 
     public string? GetName(uint entityId)
     {
         if (!Scene.Entities.EntityExists(entityId) ||
-            !Scene.Entities.HasComponent<Editable>(entityId)) return null;
-        string? name;
-        while (!_names.TryGetValue(entityId, out name))
-        {
-            name = $"Entity {entityId}";
-            if (_names.TryAdd(entityId, name)) break;
-        }
+            !Scene.Entities.HasComponent<Named>(entityId)) return null;
+        if (!_names.TryGetValue(entityId, out var name)) return null;
         return name;
     }
 
     public override void OnRegisterEvents()
     {
-        RegisterEvent<Editable>(Event.OnRemove, OnRemove);
+        RegisterEvent<Named>(Event.OnRemove, OnRemove);
     }
 
     public void SetName(uint entityId, string name)
@@ -31,7 +28,7 @@ public sealed class NameSystem : ComponentSystem
         _names[entityId] = name;
     }
 
-    private void OnRemove(uint entityId, ref Editable editable)
+    private void OnRemove(uint entityId, ref Named editable)
     {
         _names.TryRemove(entityId, out _);
     }

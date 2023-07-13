@@ -16,5 +16,5 @@ public struct Sprite : IComponent
         Color = color;
     }
 
-    public static Sprite Default => new Sprite(0, new RectInt(0, 0, 100, 100), Color32.White);
+    public static readonly Sprite Default = new Sprite(0, new RectInt(0, 0, 100, 100), Color32.White);
 }

@@ -1,5 +1,9 @@
-﻿namespace Pixl
+﻿using System.Runtime.InteropServices;
+
+namespace Pixl
 {
+    [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
     public struct Int2
     {
         public int X;

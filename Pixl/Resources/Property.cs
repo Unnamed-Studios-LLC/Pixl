@@ -12,7 +12,6 @@ public sealed class Property : GraphicsResource
         (BackingType, BackingResource) = GetBacking(descriptor);
     }
 
-    public string Name { get; }
     public PropertyScope Scope { get; }
     public PropertyDescriptor Descriptor { get; }
 

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Pixl
 {
+    [Serializable]
     public struct RectInt
     {
         public int X;

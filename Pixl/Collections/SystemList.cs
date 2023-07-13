@@ -4,6 +4,7 @@ internal sealed class SystemList
 {
     private static readonly Type s_baseType = typeof(ComponentSystem);
 
+    private readonly HashSet<Type> _types = new();
     private readonly List<ComponentSystem> _systems = new();
     private readonly List<ComponentSystem> _onFixedUpdate = new();
     private readonly List<ComponentSystem> _onLateUpdate = new();
@@ -12,10 +13,12 @@ internal sealed class SystemList
 
     public void Add(ComponentSystem system)
     {
+        var type = system.GetType();
+        if (!_types.Add(type)) throw new Exception($"ComponentSystem already added for type: {type}");
+
         _systems.Add(system);
         _systems.Sort();
 
-        var type = system.GetType();
         if (type.DoesOverride(s_baseType, nameof(ComponentSystem.OnFixedUpdate)))
         {
             _onFixedUpdate.Add(system);
@@ -41,16 +44,23 @@ internal sealed class SystemList
         }
     }
 
+    public void Clear()
+    {
+        _types.Clear();
+        _systems.Clear();
+        _onFixedUpdate.Clear();
+        _onLateUpdate.Clear();
+        _onRender.Clear();
+        _onUpdate.Clear();
+    }
+
     public T? GetFirst<T>() where T : class
     {
         return _systems.FirstOrDefault(x => x is T) as T;
     }
 
     public IEnumerable<ComponentSystem> GetAll() => _systems;
-    public IEnumerable<T> GetAll<T>() where T : class
-    {
-        return _systems.Where(x => x is T).Select(x => (x as T)!);
-    }
+    public IEnumerable<T> GetAll<T>() where T : class => _systems.OfType<T>();
 
     public void FixedUpdate()
     {
@@ -84,11 +94,12 @@ internal sealed class SystemList
 
     public void Remove(ComponentSystem system)
     {
-        // TODO ensure main thread
+        var type = system.GetType();
+        _types.Remove(type);
+
         _systems.Remove(system);
         _systems.Sort();
 
-        var type = system.GetType();
         if (type.DoesOverride(s_baseType, nameof(ComponentSystem.OnFixedUpdate)))
         {
             _onFixedUpdate.Remove(system);

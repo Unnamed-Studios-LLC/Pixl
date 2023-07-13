@@ -68,6 +68,7 @@ internal sealed class FileLogger : Logger
 
     private void EnsureDirectory()
     {
+        if (string.IsNullOrEmpty(_outputFolder)) return;
         Directory.CreateDirectory(_outputFolder);
     }
 

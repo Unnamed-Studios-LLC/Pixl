@@ -18,5 +18,5 @@ public struct Transform : IComponent
         Matrix4x4.Transformation(in position, in rotation, in scale, out LocalToWorld);
     }
 
-    public static Transform Default => new(Vec3.Zero, Vec3.Zero, Vec3.One);
+    public static readonly Transform Default = new(Vec3.Zero, Vec3.Zero, Vec3.One);
 }
