@@ -16,7 +16,7 @@ public sealed class Scene
         _renderer = new VertexRenderer(game.Resources, ushort.MaxValue, 2_048_000);
     }
 
-    public EntityDatabase Entities { get; } = new();
+    public EntityDatabase Entities { get; private set; } = new();
 
     internal Game Game { get; }
 
@@ -92,7 +92,9 @@ public sealed class Scene
     internal void Clear()
     {
         _systems.Clear();
-        Entities.DestroyAllEntities();
+        Entities.Dispose();
+        EntityDatabase.ClearComponentRegistry();
+        Entities = new();
     }
 
     internal void FixedUpdate()
@@ -174,7 +176,8 @@ public sealed class Scene
                 currentEntity = entityHeader;
                 Entities.CreateEntity(entityHeader.Id);
 
-                if (entityHeader.Name != null)
+                if (nameSystem != null &&
+                    entityHeader.Name != null)
                 {
                     Entities.AddComponent<Named>(entityHeader.Id);
                     nameSystem.SetName(entityHeader.Id, entityHeader.Name);
