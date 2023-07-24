@@ -55,6 +55,18 @@ public static class MacKeyHelper
             MacKeyCode.Keypad8 => KeyCode.Keypad8,
             MacKeyCode.Keypad9 => KeyCode.Keypad9,
             MacKeyCode.Keypad0 => KeyCode.Keypad0,
+            MacKeyCode.Delete => KeyCode.Backspace,
+            MacKeyCode.Return => KeyCode.Enter,
+            MacKeyCode.Shift => KeyCode.LeftShift,
+            MacKeyCode.RightShift => KeyCode.RightShift,
+            MacKeyCode.Control => KeyCode.LeftControl,
+            MacKeyCode.RightControl => KeyCode.RightControl,
+            MacKeyCode.Option => KeyCode.LeftAlt,
+            MacKeyCode.RightOption => KeyCode.RightAlt,
+            MacKeyCode.LeftArrow => KeyCode.LeftArrow,
+            MacKeyCode.RightArrow => KeyCode.RightArrow,
+            MacKeyCode.UpArrow => KeyCode.UpArrow,
+            MacKeyCode.DownArrow => KeyCode.DownArrow,
             _ => KeyCode.None
         };
     }

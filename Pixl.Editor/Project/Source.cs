@@ -115,14 +115,14 @@ internal sealed class Source
     {
         static void addDllReference(ProjectItemGroupElement itemGroup, string name, string dllFileName)
         {
-            var dllFolder = Environment.CurrentDirectory;
+            var dllFolder = AppDomain.CurrentDomain.BaseDirectory;
             var dllLocation = Path.Combine(dllFolder, dllFileName);
             itemGroup.AddItem("Reference", name, new[] { new KeyValuePair<string, string>("HintPath", dllLocation) });
         }
 
         static void addAnalyzerReference(ProjectItemGroupElement itemGroup, string name, string dllFileName)
         {
-            var dllFolder = Environment.CurrentDirectory;
+            var dllFolder = AppDomain.CurrentDomain.BaseDirectory;
             var dllLocation = Path.Combine(dllFolder, dllFileName);
             itemGroup.AddItem("Analyzer", dllLocation);
         }

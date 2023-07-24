@@ -15,7 +15,4 @@ internal abstract class FileBrowser
 
     public abstract string? Save(FileBrowserRequest request);
     public virtual async Task<string?> SaveAsync(FileBrowserRequest request) => await Task.Run(() => Save(request)).ConfigureAwait(false);
-
-    public abstract string? SaveFolder(FileBrowserRequest request);
-    public virtual async Task<string?> SaveFolderAsync(FileBrowserRequest request) => await Task.Run(() => Save(request)).ConfigureAwait(false);
 }

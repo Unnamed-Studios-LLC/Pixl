@@ -81,7 +81,7 @@ internal sealed class ExplorerWindow : EditorWindow
 
         _orthographicSize *= 1 + io.MouseWheel * 0.1f;
 
-        if (ImGui.IsMouseDown(ImGuiMouseButton.Middle))
+        if (ImGui.IsMouseDown(ImGuiMouseButton.Right))
         {
             var delta = io.MouseDelta.ToVec2();
             delta.Y *= -1; // ImGui Y coordinate is inverted

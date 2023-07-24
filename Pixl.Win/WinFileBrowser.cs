@@ -66,6 +66,7 @@ internal sealed class WinFileBrowser : FileBrowser
         {
             using var dialog = new FolderBrowserDialog();
             dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
+            dialog.ShowNewFolderButton = true;
 
             if (dialog.ShowDialog(_window) != DialogResult.OK) return;
             result = dialog.SelectedPath;
@@ -81,6 +82,7 @@ internal sealed class WinFileBrowser : FileBrowser
         {
             using var dialog = new FolderBrowserDialog();
             dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
+            dialog.ShowNewFolderButton = true;
 
             if (dialog.ShowDialog(_window) != DialogResult.OK)
             {
@@ -143,41 +145,6 @@ internal sealed class WinFileBrowser : FileBrowser
 
             result = dialog.FileName;
             completionSource.SetResult(dialog.FileName);
-        }
-        DialogThreadAsync(dialog);
-        return completionSource.Task;
-    }
-
-    public override string? SaveFolder(FileBrowserRequest request)
-    {
-        string? result = null;
-        void dialog()
-        {
-            using var dialog = new FolderBrowserDialog();
-            dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
-            dialog.ShowNewFolderButton = true;
-
-            if (dialog.ShowDialog(_window) != DialogResult.OK) return;
-            result = dialog.SelectedPath;
-        }
-        DialogThread(dialog);
-        return result;
-    }
-    public override Task<string?> SaveFolderAsync(FileBrowserRequest request)
-    {
-        var completionSource = new TaskCompletionSource<string?>();
-        void dialog()
-        {
-            using var dialog = new FolderBrowserDialog();
-            dialog.InitialDirectory = string.IsNullOrEmpty(request.Directory) ? string.Empty : request.Directory;
-            dialog.ShowNewFolderButton = true;
-
-            if (dialog.ShowDialog(_window) != DialogResult.OK)
-            {
-                completionSource.SetResult(null);
-                return;
-            }
-            completionSource.SetResult(dialog.SelectedPath);
         }
         DialogThreadAsync(dialog);
         return completionSource.Task;
