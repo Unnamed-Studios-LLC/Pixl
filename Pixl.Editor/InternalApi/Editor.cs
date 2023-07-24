@@ -169,27 +169,24 @@ internal sealed class Editor : App
 
     public override void Update()
     {
+        if (_reloadTask != null &&
+            (_reloadTask.Task == null || _reloadTask.Task.IsCompleted))
+        {
+            _reloadTask = null;
+        }
+
         if (Project != null)
         {
             if (_reloadTask == null &&
                 Project.Source.ReloadAvailable)
             {
                 // serialize scene
-                var documentList = new List<YamlDocument>();
-                Game.Scene.GetDocuments(documentList);
-                Game.Scene.Clear();
-
                 _reloadTask = new EditorTask("Reloading Assembly", false)
                 {
                     Progress = 0,
                     State = "Loading assembly dll..."
                 };
-                _reloadTask.SetTask(Task.Run(() => Project.Source.ReloadUserAssemblyAsync(_reloadTask)),
-                    () =>
-                    {
-                        _reloadTask = null;
-                        Game.Scene.LoadDocuments(documentList);
-                    });
+                _reloadTask.SetTask(ReloadAsync(Project, _reloadTask));
                 PushTask(_reloadTask);
             }
         }
@@ -277,6 +274,26 @@ internal sealed class Editor : App
         }
 
         ImGui.EndMainMenuBar();
+    }
+
+    private async Task ReloadAsync(Project project, EditorTask editorTask)
+    {
+        // serialize
+        var documentList = new List<YamlDocument>();
+        Game.Scene.GetDocuments(documentList);
+        Game.Scene.Clear();
+
+        try
+        {
+            await project.Source.ReloadUserAssemblyAsync(editorTask);
+        }
+        catch (Exception e)
+        {
+            PushError(e);
+        }
+
+        // deserialize
+        Game.Scene.LoadDocuments(documentList);
     }
 
     private void Save()

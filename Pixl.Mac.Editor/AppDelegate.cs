@@ -1,8 +1,9 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using AppKit;
+using CoreGraphics;
+using CoreVideo;
 using Foundation;
-using Pixl.Demo;
-using Pixl.Editor;
 using PixlEditor = Pixl.Editor.Editor;
 
 namespace Pixl.Mac.Editor;
@@ -10,69 +11,72 @@ namespace Pixl.Mac.Editor;
 [Register ("AppDelegate")]
 public class AppDelegate : NSApplicationDelegate
 {
-    private MacEditorPlayer? _editorPlayer;
-    private MacEditorWindow? _editorWindow;
-    private EditorGamePlayer? _gamePlayer;
-    private GameWindow? _gameWindow;
+    private MacWindow? _window;
     private Resources? _resources;
 	private Graphics? _graphics;
-	private Game? _game;
+    private Files? _files;
     private PixlEditor? _editor;
-    private Thread? _gameThread;
+    private CVDisplayLink? _displayLink;
+    private readonly object _renderLock = new();
 
 	public override void DidFinishLaunching (NSNotification notification)
 	{
-		// Insert code here to initialize your application
-		_editorWindow = new MacEditorWindow(new Int2(1000, 800));
-		_editorPlayer = new MacEditorPlayer();
-		_resources = new();
+        // Insert code here to initialize your application
+        _window = new MacWindow("Pixl Editor", new Int2(1000, 800));
+        _files = new(string.Empty, new MacFileBrowser(_window), typeof(Game).Assembly, typeof(PixlEditor).Assembly);
 		_graphics = new();
+		_resources = new(_graphics, _files);
+        var logger = new FileLogger(string.Empty, "editor.log", false);
+        var values = new Values(new MacValuesStore("co.unnamedstudios.pixl"));
 
-		_graphics.Start(_resources, _editorWindow, GraphicsApi.Metal);
+        _graphics.Start(_resources, _window, GraphicsApi.Metal);
+        _editor = new PixlEditor(_window, _graphics, _resources, values, logger, _files);
+        _editor.Start();
 
-#if DEBUG
-        var logger = new BroadcastLogger(_editorPlayer.MemoryLogger, new DiagnosticsLogger());
-#else
-    var logger = editorPlayer.MemoryLogger;
-#endif
+        var displayNumber = (NSNumber)NSScreen.MainScreen.DeviceDescription["NSScreenNumber"];
+        var displayId = CGDisplay.GetDisplayID(int.MaxValue);
+        _displayLink = CVDisplayLink.CreateFromDisplayId(displayNumber.UInt32Value, out var result);
+        if (_displayLink == null || result != CVReturn.Success)
+        {
+            throw new Exception($"Failed to create CVDisplayLink: {result}");
+        }
 
-        _gameWindow = new GameWindow(_editorWindow, "Pixl Game", new Int2(500, 500));
-        _gamePlayer = new EditorGamePlayer(_gameWindow, _editorPlayer, logger);
-
-        _game = new Game(_resources, _graphics, _gamePlayer, new Entry());
-        _editor = new PixlEditor(_graphics, _editorWindow, _game, _gameWindow, _resources);
-        _gameThread = new Thread(() => RunEditor(_editorWindow, _editor, _game, _graphics));
-        _gameThread.Priority = ThreadPriority.Highest;
-        _gameThread.IsBackground = false;
-        _gameThread.Start();
+        _displayLink.SetOutputCallback(Render);
+        _displayLink.Start();
     }
 
 	public override void WillTerminate (NSNotification notification)
 	{
-        // Insert code here to tear down your application
-        _editorWindow?.Stop();
-        _editorWindow = null;
-
-        _gameThread?.Join();
-
-        if (_graphics != null && _resources != null)
+        lock (_renderLock)
         {
-            _graphics.Stop(_resources);
+            _window?.Stop();
+            _window = null;
+
+            _editor?.Stop();
+            _editor = null;
+
+            if (_graphics != null && _resources != null)
+            {
+                _graphics.Stop(_resources);
+                _graphics = null;
+            }
         }
 
-        _editorPlayer?.Logger.Flush();
+        _displayLink?.Stop();
+        _displayLink?.Dispose();
+        _displayLink = null;
     }
 
-    private static void RunEditor(MacWindow window, PixlEditor editor, Game game, Graphics graphics)
+    private CVReturn Render(CVDisplayLink displayLink, ref CVTimeStamp inNow, ref CVTimeStamp inOutputTime, CVOptionFlags flagsIn, ref CVOptionFlags flagsOut)
     {
-        game.Start();
-        editor.Start();
-        while (editor.Run())
+        lock (_renderLock)
         {
-            graphics.SwapBuffers();
-            editor.WaitForNextUpdate();
+            if (_editor != null)
+            {
+                if (!_editor.Run()) return CVReturn.Error;
+                _graphics?.SwapBuffers();
+            }
+            return CVReturn.Success;
         }
-        editor.Stop();
-        game.Stop();
     }
 }

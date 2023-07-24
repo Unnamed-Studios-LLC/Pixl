@@ -20,6 +20,11 @@ internal sealed class MacView : NSView
 
     public override void KeyDown(NSEvent theEvent)
     {
+        foreach (var character in theEvent.Characters)
+        {
+            _window.PushEvent(new WindowEvent(WindowEventType.Character, character));
+        }
+
         var keyCode = MacKeyHelper.GetKeyCode(theEvent.KeyCode);
         if (keyCode == KeyCode.None) return;
         _window.PushEvent(new WindowEvent(WindowEventType.KeyDown, (int)keyCode));
@@ -81,6 +86,13 @@ internal sealed class MacView : NSView
     public override void OtherMouseUp(NSEvent theEvent)
     {
         _window.PushEvent(new WindowEvent(WindowEventType.KeyUp, (int)KeyCode.Mouse1));
+    }
+
+    public override unsafe void ScrollWheel(NSEvent theEvent)
+    {
+        var deltaX = (float)theEvent.ScrollingDeltaX / 10f;
+        var deltaY = (float)theEvent.ScrollingDeltaY / 10f;
+        _window.PushEvent(new WindowEvent(WindowEventType.Scroll, *(int*)&deltaX, *(int*)&deltaY));
     }
 }
 

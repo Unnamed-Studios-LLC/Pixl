@@ -1,10 +1,4 @@
-﻿using System.Threading;
-using System.Xml.Linq;
-using AppKit;
-using Pixl;
-using Pixl.Demo;
-using ScriptingBridge;
-using Vortice.Mathematics;
+﻿using AppKit;
 
 namespace Pixl.Mac.Editor;
 

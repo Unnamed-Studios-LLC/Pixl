@@ -9,10 +9,9 @@ namespace Pixl.Mac.Player
 	public class AppDelegate : NSApplicationDelegate
 	{
 		private MacWindow? _window;
-        private MacGamePlayer? _player;
 		private Resources? _resources;
 		private Graphics? _graphics;
-		private Game? _game;
+		private Editor? _editor;
         private Thread? _gameThread;
 
 		public override void DidFinishLaunching (NSNotification notification)

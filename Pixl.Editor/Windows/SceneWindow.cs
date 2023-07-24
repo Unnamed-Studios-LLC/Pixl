@@ -49,7 +49,7 @@ internal sealed class SceneWindow : EditorWindow
 
     public void OpenScene()
     {
-        var filePath = _editor.Files.FileBrowser.Open(new FileBrowserRequest("Scene", string.Empty, new FileExtension("Pixl Scene File", ".pixl")));
+        var filePath = _editor.Files.FileBrowser.Open(new FileBrowserRequest("Scene", string.Empty, new FileExtension("Pixl Scene File", "pixl")));
         if (filePath == null) return;
 
         try
@@ -68,13 +68,13 @@ internal sealed class SceneWindow : EditorWindow
         }
         catch (Exception e)
         {
-            _editor.Logger.Log(e);
+            _editor.PushError(e);
         }
     }
 
     public override void Save()
     {
-        var filePath = _openFilePath ?? _editor.Files.FileBrowser.Save(new FileBrowserRequest("Scene", string.Empty, new FileExtension("Pixl Scene File", ".pixl")));
+        var filePath = _openFilePath ?? _editor.Files.FileBrowser.Save(new FileBrowserRequest("Scene", string.Empty, new FileExtension("Pixl Scene File", "pixl")));
         if (filePath == null || _editor.Project == null) return;
 
         var tempPath = Path.Combine(_editor.Project.CacheDirectory, $"{Guid.NewGuid()}.temp");
