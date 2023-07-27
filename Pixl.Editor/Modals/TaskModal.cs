@@ -15,6 +15,8 @@ internal sealed class TaskModal : EditorModal
     }
 
     public override string Name => "Task...";
+
+    protected override bool CanClose => false;
     protected override bool ShouldOpen
     {
         get
@@ -32,7 +34,7 @@ internal sealed class TaskModal : EditorModal
         }
     }
 
-    protected override void OnUI()
+    public override void SubmitUI()
     {
         EditorTask? firstTask = null;
         lock (_tasks)

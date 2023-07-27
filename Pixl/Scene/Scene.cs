@@ -92,9 +92,7 @@ public sealed class Scene
     internal void Clear()
     {
         _systems.Clear();
-        Entities.Dispose();
-        EntityDatabase.ClearComponentRegistry();
-        Entities = new();
+        Entities.Clear();
     }
 
     internal void FixedUpdate()
@@ -123,26 +121,19 @@ public sealed class Scene
             documentList.Add(document);
         }
 
-        var nameSystem = GetSystem<NameSystem>();
-        Entities.IncludeDisabled().ForEach((in Entity entity) =>
+        Entities.IncludeDisabled().ForEach((uint entityId) =>
         {
             string? name = null;
-            if (nameSystem != null &&
-                entity.HasComponent<Named>())
-            {
-                name = nameSystem.GetName(entity.Id);
-            }
+            ref var nameComponent = ref Entities.TryGetComponent<Name>(entityId, out var found);
+            if (found) name = nameComponent.AsSpan().ToString();
 
-            var header = getDocument(new EntityHeader(entity.Id, name), "!entity");
+            var header = getDocument(new EntityHeader(entityId, name), "!entity");
             if (header == null) return;
             documentList.Add(header);
 
-            var archetype = Entities.GetArchetype(entity.Id);
-            foreach (var typeId in archetype.GetIds())
+            foreach (var type in Entities.GetComponentTypes(entityId))
             {
-                var componentType = Entities.GetComponentType(typeId);
-                var component = Entities.GetComponent(entity.Id, typeId);
-
+                var component = Entities.GetComponent(entityId, type);
                 var document = getDocument(component, "!component");
                 if (document == null) return;
                 documentList.Add(document);
@@ -153,7 +144,6 @@ public sealed class Scene
     internal void LoadDocuments(IEnumerable<YamlDocument> documents)
     {
         EntityHeader currentEntity = default;
-        NameSystem? nameSystem = null;
         foreach (var document in documents)
         {
             var parsed = Serializer.GetObject(document);
@@ -166,21 +156,15 @@ public sealed class Scene
             if (parsed is ComponentSystem system)
             {
                 AddSystem(system);
-                if (system is NameSystem parsedNameSystem)
-                {
-                    nameSystem = parsedNameSystem;
-                }
             }
             else if (parsed is EntityHeader entityHeader)
             {
                 currentEntity = entityHeader;
                 Entities.CreateEntity(entityHeader.Id);
 
-                if (nameSystem != null &&
-                    entityHeader.Name != null)
+                if (entityHeader.Name != null)
                 {
-                    Entities.AddComponent<Named>(entityHeader.Id);
-                    nameSystem.SetName(entityHeader.Id, entityHeader.Name);
+                    Entities.AddComponent(entityHeader.Id, new Name(entityHeader.Name));
                 }
             }
             else if (parsed is IComponent component &&
@@ -207,6 +191,7 @@ public sealed class Scene
 
     internal void Stop()
     {
+        Clear();
         Game.Resources.Remove(_renderer);
     }
 

@@ -14,8 +14,10 @@ internal sealed class StartupModal : EditorModal
     }
 
     public override string Name => "Startup";
+    protected override bool CanClose => false;
+    protected override bool ShouldOpen => _editor.Project == null;
 
-    protected override void OnUI()
+    public override void SubmitUI()
     {
         ImGui.Text("Select a project to start editing.");
         ImGui.NewLine();
@@ -39,7 +41,7 @@ internal sealed class StartupModal : EditorModal
                 }
                 if (ImGui.IsItemClicked())
                 {
-                    _editor.StartProject(projectFilePath);
+                    _editor.OpenProject(projectFilePath);
                 }
                 ImGui.SameLine();
                 ImGui.TextDisabled(projectFilePath);
@@ -56,16 +58,6 @@ internal sealed class StartupModal : EditorModal
         if (ImGui.Button("New Project..."))
         {
             _editor.ShowModal(new CreateProjectModal(_editor));
-            /*
-            var saveRequest = new FileBrowserRequest("New Project", string.Empty);
-            var saveFolder = _editor.Files.FileBrowser.SaveFolder(saveRequest);
-            if (saveFolder != null)
-            {
-                var editorTask = new EditorTask("Creating Project...", true);
-                editorTask.SetTask(ProjectBuilder.CreateAsync(saveFolder, editorTask), _editor.StartProject);
-                _editor.PushTask(editorTask);
-            }
-            */
         }
 
         ImGui.SameLine();
@@ -75,7 +67,7 @@ internal sealed class StartupModal : EditorModal
             var openFilePath = _editor.Files.FileBrowser.OpenFolder(openRequest);
             if (openFilePath != null)
             {
-                _editor.StartProject(openFilePath);
+                _editor.OpenProject(openFilePath);
             }
         }
     }

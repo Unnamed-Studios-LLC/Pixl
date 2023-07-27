@@ -49,7 +49,8 @@ public class TypeMetaData<T> : TypeMetaData
 
 public sealed class UnmanagedTypeMetaData<T> : TypeMetaData<T> where T : unmanaged
 {
-    public UnmanagedTypeMetaData(string name, bool isComponent, bool isVertex, Attribute[] attributes, FieldMetaData[] fields, Func<T> factory) : base(name, isComponent, isVertex, attributes, fields, factory) { }
+    public UnmanagedTypeMetaData(string name, bool isComponent, bool isVertex, Attribute[] attributes, FieldMetaData[] fields, Func<T> factory) :
+        base(name, isComponent, isVertex, attributes, fields, factory) { }
 
     internal override void AddComponent(EntityDatabase entities, uint entityId, object component)
     {

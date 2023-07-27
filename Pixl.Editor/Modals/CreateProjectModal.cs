@@ -17,7 +17,7 @@ internal sealed class CreateProjectModal : EditorModal
 
     public override string Name => "Create Project";
 
-    protected override void OnUI()
+    public override void SubmitUI()
     {
         ImGui.Text("Project Name");
         if (ImGui.InputTextWithHint(string.Empty, "My Project", ref _projectName, 64))
@@ -60,7 +60,7 @@ internal sealed class CreateProjectModal : EditorModal
         if (ImGui.Button("Create"))
         {
             var editorTask = new EditorTask("Creating Project", true);
-            editorTask.SetTask(ProjectBuilder.CreateAsync(_destinationPath, editorTask), _editor.StartProject);
+            editorTask.SetTask(ProjectBuilder.CreateAsync(_destinationPath, editorTask), _editor.OpenProject);
             _editor.PushTask(editorTask);
             Open = false;
         }

@@ -51,16 +51,28 @@ namespace Pixl
         }
 
         /// <summary>
-        /// Register a component event callback
+        /// Registers a component event callback
         /// </summary>
         /// <typeparam name="T">The component type</typeparam>
         /// <param name="event">The type of event to register</param>
         /// <param name="componentHandler">Component handler method called on event</param>
-        protected void RegisterEvent<T>(Event @event, ComponentHandler<T> componentHandler) where T : unmanaged
+        protected void RegisterComponentEvent<T>(Event @event, ComponentHandler<T> componentHandler) where T : unmanaged
         {
-            if (!Registering) throw new Exception($"{nameof(RegisterEvent)} may only be called from within {nameof(ComponentSystem)}.{nameof(OnRegisterEvents)}");
-            if (!Removing) Scene?.Entities.Subscribe(@event, componentHandler);
-            else Scene?.Entities.Unsubscribe(@event, componentHandler);
+            if (!Registering) throw new Exception($"{nameof(RegisterComponentEvent)} may only be called from within {nameof(ComponentSystem)}.{nameof(OnRegisterEvents)}");
+            if (!Removing) Scene?.Entities.AddComponentEvent(@event, componentHandler);
+            else Scene?.Entities.RemoveComponentEvent(@event, componentHandler);
+        }
+
+        /// <summary>
+        /// Registers an entity event callback
+        /// </summary>
+        /// <param name="event">The type of event to register</param>
+        /// <param name="componentHandler">Component handler method called on event</param>
+        protected void RegisterEntityEvent(Event @event, EntityHandler entityHandler)
+        {
+            if (!Registering) throw new Exception($"{nameof(RegisterEntityEvent)} may only be called from within {nameof(ComponentSystem)}.{nameof(OnRegisterEvents)}");
+            if (!Removing) Scene?.Entities.AddEntityEvent(@event, entityHandler);
+            else Scene?.Entities.RemoveEntityEvent(@event, entityHandler);
         }
     }
 }

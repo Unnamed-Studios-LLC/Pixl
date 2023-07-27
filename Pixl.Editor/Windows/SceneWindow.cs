@@ -18,7 +18,6 @@ internal sealed class SceneWindow : EditorWindow
     private readonly EntityLayout _createSpriteLayout;
     private readonly PropertiesWindow _properties;
     private readonly Editor _editor;
-    private NameSystem? _nameSystem;
     private int _listLength = 0;
     private uint _createdEntityId;
     private uint _clickedEntityId;
@@ -32,19 +31,12 @@ internal sealed class SceneWindow : EditorWindow
         _editor = editor;
         Open = true;
 
-        _createTransformLayout = EntityLayoutBuilder.Create()
-            .Add<Transform>()
-            .Add<Named>()
-            .Build();
-        _createTransformLayout.Set(Transform.Default);
+        _createTransformLayout = new EntityLayout();
+        _createTransformLayout.Add(Transform.Default);
 
-        _createSpriteLayout = EntityLayoutBuilder.Create()
-            .Add<Transform>()
-            .Add<Sprite>()
-            .Add<Named>()
-            .Build();
-        _createSpriteLayout.Set(Transform.Default);
-        _createSpriteLayout.Set(Sprite.Default);
+        _createSpriteLayout = new EntityLayout();
+        _createSpriteLayout.Add(Transform.Default);
+        _createSpriteLayout.Add(Sprite.Default);
     }
 
     public void OpenScene()
@@ -109,7 +101,7 @@ internal sealed class SceneWindow : EditorWindow
 
     protected override void OnUI()
     {
-        if (_openFilePath == null) UnsavedChanges = true;
+        if (_editor.Project != null && _openFilePath == null) UnsavedChanges = true;
 
         for (int i = 0; i < _selectedEntities.Count; i++)
         {
@@ -119,8 +111,6 @@ internal sealed class SceneWindow : EditorWindow
             _selectedIndices.RemoveAt(i);
             i--;
         }
-
-        _nameSystem = _scene.GetSystem<NameSystem>();
 
         if (!ImGui.BeginTabBar("Scene Tabs")) return;
 
@@ -250,56 +240,43 @@ internal sealed class SceneWindow : EditorWindow
         _rangeSelect.Clear();
     }
 
-    private unsafe void SubmitEntity(in Entity entity)
+    private unsafe void SubmitEntity(uint entityId)
     {
+        var entities = _scene.Entities;
+
         int listIndex = _listLength++;
-        if (_entityList.Count > listIndex) _entityList[listIndex] = entity.Id;
-        else _entityList.Add(entity.Id);
+        if (_entityList.Count > listIndex) _entityList[listIndex] = entityId;
+        else _entityList.Add(entityId);
 
-        var selectedIndex = _selectedEntities.IndexOf(entity.Id);
+        var selectedIndex = _selectedEntities.IndexOf(entityId);
 
+        // flags
         var flags = ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.SpanAvailWidth | ImGuiTreeNodeFlags.Leaf;
         if (selectedIndex >= 0) flags |= ImGuiTreeNodeFlags.Selected;
 
-        var disabled = entity.HasComponent<Disabled>();
+        // disabled
+        var disabled = entities.HasComponent<Disabled>(entityId);
         if (disabled) ImGui.PushStyleColor(ImGuiCol.Text, *ImGui.GetStyleColorVec4(ImGuiCol.TextDisabled));
 
-        var name = _nameSystem?.GetName(entity.Id);
-        bool nodeOpen;
-        if (name != null) nodeOpen = ImGui.TreeNodeEx(name, flags);
-        else
-        {
-            var tempPrefix = NameSystem.TempPrefix;
-            var idLength = (int)Math.Floor(Math.Log10(entity.Id) + 1);
-            var tempNameLength = tempPrefix.Length + idLength + 1;
-            Span<char> tempName = stackalloc char[tempNameLength];
-            tempPrefix.CopyTo(tempName);
-            var idValue = entity.Id;
-            for (int i = idLength - 1; i >= 0; i--)
-            {
-                var digitValue = idValue % 10;
-                idValue /= 10;
-                var digit = (char)('0' + digitValue);
-                tempName[tempPrefix.Length + i] = digit;
-            }
-            tempName[tempNameLength - 1] = '\0';
-            nodeOpen = ImGui.TreeNodeEx(tempName, flags);
-        }
+        // tree node
+        var name = entities.GetNameOrPrefixed(entityId, "Entity ");
+        var nodeOpen = ImGui.TreeNodeEx(name.AsSpan(), flags);
 
+        // pop disabled style
         if (disabled) ImGui.PopStyleColor();
 
-        if (_createdEntityId == entity.Id)
+        if (_createdEntityId == entityId)
         {
-            _selectedEntities.Add(entity.Id);
+            _selectedEntities.Add(entityId);
             _selectedIndices.Add(listIndex);
         }
         else if (ImGui.IsItemClicked(ImGuiMouseButton.Left) || ImGui.IsItemClicked(ImGuiMouseButton.Right))
         {
-            _clickedEntityId = entity.Id;
+            _clickedEntityId = entityId;
         }
         else if ((ImGui.IsMouseReleased(ImGuiMouseButton.Left) || ImGui.IsMouseReleased(ImGuiMouseButton.Right)) &&
             ImGui.IsItemHovered() &&
-            _clickedEntityId == entity.Id)
+            _clickedEntityId == entityId)
         {
             var shiftDown = ImGui.GetIO().KeyShift;
             var ctrlDown = ImGui.GetIO().KeyCtrl;
@@ -319,9 +296,9 @@ internal sealed class SceneWindow : EditorWindow
 
             if (selectedIndex < 0)
             {
-                _selectedEntities.Add(entity.Id);
+                _selectedEntities.Add(entityId);
                 _selectedIndices.Add(listIndex);
-                _properties.SelectedObject = entity.Id;
+                _properties.SelectedObject = entityId;
             }
             else if (!shiftDown)
             {
@@ -333,38 +310,15 @@ internal sealed class SceneWindow : EditorWindow
         if (_selectedEntities.Count != 0 &&
             ImGui.BeginDragDropSource())
         {
-            var id = entity.Id;
+            var id = entityId;
             ImGui.SetDragDropPayload("EntityId", (nint)(&id), sizeof(uint), ImGuiCond.Once);
-            Span<char> tempName = stackalloc char[257];
             for (int i = 0; i < 5 && i < _selectedEntities.Count; i++)
             {
                 var listEntityId = _selectedEntities[_selectedEntities.Count - i - 1];
-                var selectedName = _nameSystem?.GetName(listEntityId);
-                if (selectedName != null)
-                {
-                    if (i == 0) ImGui.Text(selectedName);
-                    else ImGui.TextDisabled(selectedName);
-                }
-                else
-                {
-                    var tempPrefix = NameSystem.TempPrefix;
-                    var idLength = (int)Math.Floor(Math.Log10(listEntityId) + 1);
-                    var tempNameLength = tempPrefix.Length + idLength + 1;
-                    tempPrefix.CopyTo(tempName);
-                    var idValue = listEntityId;
-                    for (int j = idLength - 1; j >= 0; j--)
-                    {
-                        var digitValue = idValue % 10;
-                        idValue /= 10;
-                        var digit = (char)('0' + digitValue);
-                        tempName[tempPrefix.Length + j] = digit;
-                    }
-                    tempName[tempNameLength - 1] = '\0';
-                    var sliced = tempName[0..tempNameLength];
+                var selectedName = entities.GetNameOrPrefixed(listEntityId);
 
-                    if (i == 0) ImGui.Text(sliced);
-                    else ImGui.TextDisabled(sliced);
-                }
+                if (i == 0) ImGui.Text(selectedName.AsSpan());
+                else ImGui.TextDisabled(selectedName.AsSpan());
             }
             if (_selectedEntities.Count > 5) ImGui.Text($"{_selectedEntities.Count - 5} more...");
             ImGui.EndDragDropSource();

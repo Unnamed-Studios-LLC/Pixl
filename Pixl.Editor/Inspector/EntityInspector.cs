@@ -1,92 +1,71 @@
 ﻿using EntitiesDb;
 using ImGuiNET;
-using System.Linq;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Pixl.Editor;
 
 internal sealed class EntityInspector : ObjectInspector<uint>
 {
     private string? _idLabel;
-    private string? _tempName;
     private bool _editingName;
-    private string _nameEdit = string.Empty;
-    private EntityArchetype? _archetype;
-    private (int, ObjectInspector)[] _inspectors = Array.Empty<(int, ObjectInspector)>();
+    private readonly byte[] _nameBuffer = new byte[64];
+    private readonly Dictionary<Type, ObjectInspector> _inspectors = new();
 
-    protected override void OnSubmitUI(Editor editor, string label, ref uint value)
+    private int BufferStringLength
+    {
+        get
+        {
+            int i;
+            for (i = 0; i < _nameBuffer.Length && _nameBuffer[i] != 0; i++) { }
+            return i;
+        }
+    }
+
+    protected override void OnSubmitUI(Editor editor, string label, ref uint entityId)
     {
         var entities = editor.Game.Scene.Entities;
 
-        if (value == 0 || !entities.EntityExists(value))
+        if (entityId == 0 || !entities.EntityExists(entityId))
         {
-            _archetype = null;
-            _inspectors = Array.Empty<(int, ObjectInspector)>();
             return;
         }
 
-        var archetype = entities.GetArchetype(value);
-        if (archetype != _archetype)
-        {
-            _inspectors = archetype.GetIds().Select(x => (x, (ObjectInspector)new DefaultObjectInspector(entities.GetComponentType(x).Type))).ToArray();
-            _archetype = archetype;
-        }
-
-        var hasDisabled = entities.HasComponent<Disabled>(value);
+        // disabled
+        var hasDisabled = entities.HasComponent<Disabled>(entityId);
         var disabled = hasDisabled;
         if (ImGui.Checkbox("Disabled", ref disabled) &&
             disabled != hasDisabled)
         {
-            if (disabled) entities.DisableEntity(value);
-            else entities.EnableEntity(value);
+            if (disabled) entities.AddComponent<Disabled>(entityId);
+            else entities.RemoveComponent<Disabled>(entityId);
         }
 
-        _idLabel ??= value.ToString();
+        // id
+        _idLabel ??= entityId.ToString();
         ImGui.Text("Id:");
         ImGui.SameLine();
         ImGui.TextDisabled(_idLabel);
 
-        var nameSystem = editor.Game.Scene.GetSystem<NameSystem>();
-        if (nameSystem != null &&
-            entities.HasComponent<Named>(value))
+        // name
+        SubmitNameField(entities, entityId);
+
+        // components
+        foreach (var type in entities.GetComponentTypes(entityId))
         {
-            var name = nameSystem.GetName(value);
-            if (name == null)
+            if (!_inspectors.TryGetValue(type, out var inspector))
             {
-                _tempName ??= $"Entity {value}";
-                name = _tempName;
+                inspector = new DefaultObjectInspector(type);
+                _inspectors.Add(type, inspector);
             }
 
-            var didReturn = _editingName ?
-                    ImGui.InputText("Name", ref _nameEdit, 256, ImGuiInputTextFlags.EnterReturnsTrue) :
-                    ImGui.InputText("Name", ref name, 256, ImGuiInputTextFlags.EnterReturnsTrue);
-
-            var editingName = ImGui.IsItemActive();
-            if (_editingName != editingName)
-            {
-                if (editingName) _nameEdit = name;
-                _editingName = editingName;
-            }
-
-            if (didReturn)
-            {
-                nameSystem.SetName(value, _nameEdit);
-                _editingName = false;
-            }
+            var componentValue = entities.GetComponent(entityId, type);
+            componentValue = inspector.SubmitUI(editor, type.Name, componentValue);
+            if (componentValue != null && type != typeof(Disabled)) entities.SetComponent(entityId, type, componentValue);
             ImGui.NewLine();
         }
 
-        var namedType = entities.GetComponentType<Named>();
-        foreach (var (typeId, inspector) in _inspectors)
-        {
-            var componentType = entities.GetComponentType(typeId);
-            if (nameSystem != null && componentType.Id == namedType.Id) continue;
-
-            var componentValue = entities.GetComponent(value, typeId);
-            componentValue = inspector.SubmitUI(editor, componentType.Type.Name, componentValue);
-            if (componentValue != null) entities.SetComponent(value, typeId, componentValue);
-            ImGui.NewLine();
-        }
-
+        // popup window
         if (ImGui.BeginPopupContextWindow())
         {
             if (ImGui.BeginMenu("Add Component"))
@@ -94,11 +73,11 @@ internal sealed class EntityInspector : ObjectInspector<uint>
                 foreach (var metaData in MetaData.All)
                 {
                     if (!metaData.IsComponent ||
-                        metaData.HasComponent(entities, value)) continue;
+                        metaData.HasComponent(entities, entityId)) continue;
 
                     if (ImGui.MenuItem(metaData.Name))
                     {
-                        metaData.AddComponent(entities, value, metaData.CreateInstance());
+                        metaData.AddComponent(entities, entityId, metaData.CreateInstance());
                     }
                 }
                 ImGui.EndMenu();
@@ -106,5 +85,24 @@ internal sealed class EntityInspector : ObjectInspector<uint>
 
             ImGui.EndPopup();
         }
+    }
+
+    private void SubmitNameField(EntityDatabase entities, uint entityId)
+    {
+        var name = entities.GetNameOrPrefixed(entityId);
+
+        if (!_editingName)
+        {
+            var nameSpan = name.AsSpan();
+            Encoding.UTF8.GetBytes(nameSpan, _nameBuffer);
+        }
+
+        if (ImGui.InputText("Name", _nameBuffer, (uint)_nameBuffer.Length, ImGuiInputTextFlags.EnterReturnsTrue))
+        {
+            var nameString = Encoding.UTF8.GetString(_nameBuffer.AsSpan(0, BufferStringLength));
+            entities.AddComponent(entityId, new Name(nameString));
+            _editingName = false;
+        }
+        ImGui.NewLine();
     }
 }

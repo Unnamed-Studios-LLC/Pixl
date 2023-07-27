@@ -9,6 +9,7 @@ internal sealed class ErrorModal : EditorModal
 
     public override string Name => "Error...";
 
+    protected override bool CanClose => false;
     protected override bool ShouldOpen => _errors.Count > 0;
 
     public void Push(Exception error)
@@ -19,7 +20,7 @@ internal sealed class ErrorModal : EditorModal
         }
     }
 
-    protected override void OnUI()
+    public override void SubmitUI()
     {
         lock (_errors)
         {

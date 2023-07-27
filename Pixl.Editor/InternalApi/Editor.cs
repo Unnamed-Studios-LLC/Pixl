@@ -63,6 +63,50 @@ internal sealed class Editor : App
     public GameWindow GameWindow { get; }
     public SceneWindow SceneWindow { get; }
 
+    public void CloseCurrentProject()
+    {
+        Game.Stop();
+        Project = null;
+        Window.Title = "Pixl Editor";
+    }
+
+    public void OpenProject(string projectDirectory)
+    {
+        EditorTask editorTask = new("Loading Project", true)
+        {
+            State = "Reading project files...",
+            Progress = 0
+        };
+
+        async Task task()
+        {
+            await Task.Yield();
+
+            editorTask.Progress = 1;
+            editorTask.State = "Loading project...";
+
+            await Task.Yield();
+
+            if (!Directory.Exists(projectDirectory))
+            {
+                throw new EditorException("Unable to load project, directory does not exist!", $"Directory: {projectDirectory}");
+            }
+
+            Project = new Project(projectDirectory);
+            Game.Stop();
+            Game.Start();
+            Game.Scene.AddSystem<CameraSystem>();
+            Game.Scene.AddSystem<TransformSystem>();
+
+            Window.Title = $"{Project.ProjectName} - Pixl Editor";
+
+            EditorValues.AddRecentProject(projectDirectory);
+        }
+
+        editorTask.SetTask(task());
+        PushTask(editorTask);
+    }
+
     public override bool ProcessEvents(Span<WindowEvent> events)
     {
         _gui.Update(Time.Delta, events);
@@ -107,44 +151,6 @@ internal sealed class Editor : App
         Resources.Add(_gameRenderTexture);
     }
 
-    public void StartProject(string projectDirectory)
-    {
-        EditorTask editorTask = new("Loading Project", true)
-        {
-            State = "Reading project files...",
-            Progress = 0
-        };
-
-        async Task task()
-        {
-            await Task.Yield();
-
-            editorTask.Progress = 1;
-            editorTask.State = "Loading project...";
-
-            await Task.Yield();
-
-            if (!Directory.Exists(projectDirectory))
-            {
-                throw new EditorException("Unable to load project, directory does not exist!", $"Directory: {projectDirectory}");
-            }
-
-            Project = new Project(projectDirectory);
-            Game.Stop();
-            Game.Start();
-            Game.Scene.AddSystem<CameraSystem>();
-            Game.Scene.AddSystem<NameSystem>();
-            Game.Scene.AddSystem<TransformSystem>();
-
-            Window.Title = $"{Project.ProjectName} - Pixl Editor";
-
-            EditorValues.AddRecentProject(projectDirectory);
-        }
-
-        editorTask.SetTask(task());
-        PushTask(editorTask);
-    }
-
     public override void Stop()
     {
         if (Project != null)
@@ -158,13 +164,6 @@ internal sealed class Editor : App
         _gui.Stop(Resources);
 
         base.Stop();
-    }
-
-    public void StopProject()
-    {
-        Game.Stop();
-        Project = null;
-        Window.Title = "Pixl Editor";
     }
 
     public override void Update()
@@ -195,10 +194,10 @@ internal sealed class Editor : App
 
     private IEnumerable<EditorModal> GetModals()
     {
-        yield return _errorModal;
-        yield return _taskModal;
-        if (_variableModal != null) yield return _variableModal;
         yield return _startupModal;
+        if (_variableModal != null) yield return _variableModal;
+        yield return _taskModal;
+        yield return _errorModal;
     }
 
     private void MainDockspace()
@@ -273,6 +272,16 @@ internal sealed class Editor : App
             ImGui.EndMenu();
         }
 
+        if (ImGui.BeginMenu("Project"))
+        {
+            if (ImGui.MenuItem("Close Project"))
+            {
+                CloseCurrentProject();
+            }
+
+            ImGui.EndMenu();
+        }
+
         ImGui.EndMainMenuBar();
     }
 
@@ -317,20 +326,14 @@ internal sealed class Editor : App
 
     private void SubmitModals()
     {
-        static void submitModal(EditorModal modal, Action? next)
-        {
-            if (!modal.SubmitUI(next)) next?.Invoke();
-        }
-
-        _startupModal.Open = Project == null;
-        Action? next = null;
+        int open = 0;
         foreach (var modal in GetModals())
         {
-            var nextVal = next;
-            next = () => submitModal(modal, nextVal);
+            if (!modal.SubmitModal()) continue;
+            open++;
         }
 
-        next?.Invoke();
+        for (int i = 0; i < open; i++) ImGui.EndPopup();
     }
 
     private void SubmitWindows()

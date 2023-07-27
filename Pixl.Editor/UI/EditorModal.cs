@@ -5,52 +5,48 @@ namespace Pixl.Editor;
 
 internal abstract class EditorModal : IEditorUI
 {
-    private bool _open = false;
+    private bool _popupOpen = false;
 
     public abstract string Name { get; }
-    public bool Open
-    {
-        get => _open;
-        set => _open = value;
-    }
+    public bool Open { get; set; }
 
+    protected virtual bool CanClose => true;
     protected virtual bool ShouldOpen => Open;
 
-    public void SubmitUI() => SubmitUI(null);
-    public bool SubmitUI(Action? next)
+    public bool SubmitModal()
     {
-        if (ShouldOpen)
+        Open = ShouldOpen;
+        _popupOpen = ImGui.IsPopupOpen(Name);
+
+        if (Open && !_popupOpen)
         {
             ImGui.OpenPopup(Name);
-            Open = ShouldOpen;
-        }
-        else
-        {
-            Open = false;
+            _popupOpen = true;
+
+            // Always center this window when appearing
+            var center = ImGui.GetMainViewport().GetCenter();
+            ImGui.SetNextWindowPos(center, ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
         }
 
-        // Always center this window when appearing
-        var center = ImGui.GetMainViewport().GetCenter();
-        ImGui.SetNextWindowPos(center, ImGuiCond.Always, new Vector2(0.5f, 0.5f));
-
-        var open = Open;
-        if (ImGui.BeginPopupModal(Name, ref open, ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.Modal | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize))
+        if (ImGui.BeginPopupModal(Name, ref _popupOpen, ImGuiWindowFlags.NoDocking | ImGuiWindowFlags.Modal | ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoResize))
         {
             if (!Open)
             {
                 ImGui.CloseCurrentPopup();
+                ImGui.EndPopup();
                 return false;
             }
 
-            OnUI();
-
-            next?.Invoke();
-            ImGui.EndPopup();
+            SubmitUI();
             return true;
+        }
+        else if (CanClose)
+        {
+            Open = false;
         }
 
         return false;
     }
 
-    protected abstract void OnUI();
+    public abstract void SubmitUI();
 }
