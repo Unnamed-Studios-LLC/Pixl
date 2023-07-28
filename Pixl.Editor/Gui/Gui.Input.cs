@@ -12,7 +12,7 @@ internal sealed partial class Gui
 		{
 			>= KeyCode.A and <= KeyCode.Z => ImGuiKey.A + (keyCode - KeyCode.A),
 			>= KeyCode.Keypad0 and <= KeyCode.Keypad9 => ImGuiKey.Keypad0 + (keyCode - KeyCode.Keypad0),
-			>= KeyCode.Alpha0 and <= KeyCode.Alpha9 => ImGuiKey._0 + (keyCode - KeyCode.Keypad0),
+			>= KeyCode.Alpha0 and <= KeyCode.Alpha9 => ImGuiKey._0 + (keyCode - KeyCode.Alpha0),
 			>= KeyCode.F1 and <= KeyCode.F12 => ImGuiKey.F1 + (keyCode - KeyCode.F12),
 			KeyCode.Backspace => ImGuiKey.Backspace,
 			KeyCode.Escape => ImGuiKey.Escape,
