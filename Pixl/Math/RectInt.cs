@@ -3,6 +3,7 @@
 namespace Pixl
 {
     [Serializable]
+    [Inline]
     public struct RectInt
     {
         public int X;

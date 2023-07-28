@@ -21,22 +21,19 @@ internal static class ValueInspectors
 
         [typeof(Color32)] = field => new Color32Inspector(),
 
-        [typeof(Vec2)] = field => new Vec2Inspector(),
+        [typeof(Vec2)] = field => new Vec2Inspector(field),
         [typeof(Vec3)] = field => new Vec3Inspector(field),
-        [typeof(Vec4)] = field => new Vec4Inspector(),
+        [typeof(Vec4)] = field => new Vec4Inspector(field),
 
-        [typeof(Rect)] = field => new RectInspector(),
-        [typeof(RectInt)] = field => new RectIntInspector(),
+        [typeof(Rect)] = field => new RectInspector(field),
+        [typeof(RectInt)] = field => new RectIntInspector(field),
+
+        [typeof(Entity)] = field => new EntityIdInspector(),
+        [typeof(ResourceView)] = field => new ResourceViewInspector(field.GetCustomAttribute<ResourceTypeAttribute>()?.ResourceType),
     };
 
     public static ObjectInspector? GetInspector(FieldInfo field)
     {
-        if (Type.GetTypeCode(field.FieldType) == TypeCode.UInt32)
-        {
-            if (field.GetCustomAttribute<EntityIdAttribute>() != null) return new EntityIdInspector();
-            if (field.GetCustomAttribute<ResourceIdAttribute>() is ResourceIdAttribute resourceIdAttribute) return new ResourceIdInspector(resourceIdAttribute.ResourceType);
-        }
-
         return s_inspectors.TryGetValue(field.FieldType, out var factory) ? factory(field) : null;
     }
 }

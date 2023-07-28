@@ -64,7 +64,7 @@ public sealed class CameraSystem : ComponentSystem
             entitites.ForEach(state, static (ref Sprite sprite, ref Transform transform, RenderState state) =>
             {
                 var renderer = state.Renderer!;
-                renderer.SetTexture(sprite.TextureId);
+                renderer.SetTexture(sprite.Texture.Id);
 
                 // clockwise quad vertices
                 Vec3 min = sprite.Rect.Min;

@@ -6,6 +6,7 @@ namespace Pixl;
 
 public abstract class TypeMetaData
 {
+    private readonly IReadOnlyDictionary<Type, Attribute> _attributeMap;
     private readonly IReadOnlyDictionary<string, FieldMetaData> _fieldMap;
 
     protected TypeMetaData(string name, bool isComponent, bool isVertex, int size, Attribute[] attributes, FieldMetaData[] fields)
@@ -16,6 +17,7 @@ public abstract class TypeMetaData
         Size = size;
         Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
         Fields = fields ?? throw new ArgumentNullException(nameof(fields));
+        _attributeMap = attributes.ToDictionary(x => x.GetType());
         _fieldMap = fields.ToDictionary(x => x.Name);
     }
 
@@ -23,6 +25,11 @@ public abstract class TypeMetaData
     public Attribute[] Attributes { get; }
     public FieldMetaData[] Fields { get; }
 
+    public bool HasAttribute<T>() => HasAttribute(typeof(T));
+    public bool HasAttribute(Type type) => _attributeMap.ContainsKey(type);
+
+    public bool TryGetAttribute<T>(out Attribute? attribute) => TryGetAttribute(typeof(T), out attribute);
+    public bool TryGetAttribute(Type type, out Attribute? attribute) => _attributeMap.TryGetValue(type, out attribute);
     public bool TryGetField(string fieldName, out FieldMetaData? field) => _fieldMap.TryGetValue(fieldName, out field);
 
     internal int Size { get; }

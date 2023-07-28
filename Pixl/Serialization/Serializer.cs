@@ -1,14 +1,14 @@
 ﻿using System.Globalization;
-using System.Reflection.Metadata;
+using System.Xml.Linq;
 using YamlDotNet.Core;
-using YamlDotNet.Core.Tokens;
+using YamlDotNet.Core.Events;
 using YamlDotNet.RepresentationModel;
 
 namespace Pixl;
 
 internal static class Serializer
 {
-    private static readonly YamlScalarNode s_nullScalar = new("null")
+    public static readonly YamlScalarNode NullScalar = new("null")
     {
         Style = ScalarStyle.Plain
     };
@@ -34,11 +34,17 @@ internal static class Serializer
         return new YamlDocument(node);
     }
 
-    public static object? GetObject(YamlDocument document)
+    public static object? GetObject(YamlDocument document, out string? tag)
     {
         if (document.RootNode is not YamlMappingNode mappingNode ||
-            mappingNode.Children.Count == 0) return null;
+            mappingNode.Children.Count == 0)
+        {
+            tag = null;
+            return null;
+        }
+
         var (key, value) = mappingNode.Children.First();
+        tag = key.Tag.Value;
 
         if (key is not YamlScalarNode keyScalar ||
             keyScalar.Value == null) return null;
@@ -58,7 +64,27 @@ internal static class Serializer
             metaData == null ||
             value == null) return null;
 
-        return new YamlMappingNode(GetFields(metaData, value));
+        YamlMappingNode mapping;
+        if (value is ISerializable serializable)
+        {
+            var node = new Node();
+            try
+            {
+                serializable.Serialize(ref node);
+            }
+            catch (Exception e)
+            {
+                // TODO log error
+            }
+            mapping = node.GetMappingNode();
+        }
+        else
+        {
+            mapping = new YamlMappingNode(GetFields(metaData, value));
+        }
+
+        mapping.Style = metaData.HasAttribute<InlineAttribute>() ? MappingStyle.Flow : MappingStyle.Block;
+        return mapping;
     }
 
     private static IEnumerable<KeyValuePair<YamlNode, YamlNode>> GetFields(TypeMetaData metaData, object value)
@@ -90,34 +116,49 @@ internal static class Serializer
     {
         if (node is not YamlMappingNode mappingNode) return null;
         var value = metaData.CreateInstance();
-        SetFields(metaData, ref value, mappingNode.Children);
+        if (value is ISerializable serializable)
+        {
+            try
+            {
+                var parseNode = new Node(mappingNode);
+                serializable.Serialize(ref parseNode);
+            }
+            catch (Exception e)
+            {
+                // TODO log error
+            }
+        }
+        else
+        {
+            SetFields(metaData, ref value, mappingNode.Children);
+        }
         return value;
     }
 
     private static YamlScalarNode? GetScalar(Type type, object? value)
     {
         // explicit null
-        if (value == null) return s_nullScalar;
+        if (value == null) return NullScalar;
 
         // write scalar
         var typeCode = Type.GetTypeCode(type);
         var invariantCulture = CultureInfo.InvariantCulture;
         YamlScalarNode? node = typeCode switch
         {
-            TypeCode.Char => new YamlScalarNode(((char)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Byte => new YamlScalarNode(((byte)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.SByte => new YamlScalarNode(((sbyte)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Int16 => new YamlScalarNode(((short)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Int32 => new YamlScalarNode(((int)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Int64 => new YamlScalarNode(((long)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.UInt16 => new YamlScalarNode(((ushort)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.UInt32 => new YamlScalarNode(((uint)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.UInt64 => new YamlScalarNode(((ulong)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Decimal => new YamlScalarNode(((decimal)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Single => new YamlScalarNode(((float)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.Double => new YamlScalarNode(((double)value).ToString(invariantCulture)) { Style = ScalarStyle.Plain },
-            TypeCode.String => new YamlScalarNode(value.ToString()) { Style = ScalarStyle.DoubleQuoted },
-            TypeCode.Boolean => new YamlScalarNode((bool)value ? "yes" : "no") { Style = ScalarStyle.Plain },
+            TypeCode.Char => new YamlScalarNode(((char)value).ToString(invariantCulture)),
+            TypeCode.Byte => new YamlScalarNode(((byte)value).ToString(invariantCulture)),
+            TypeCode.SByte => new YamlScalarNode(((sbyte)value).ToString(invariantCulture)),
+            TypeCode.Int16 => new YamlScalarNode(((short)value).ToString(invariantCulture)),
+            TypeCode.Int32 => new YamlScalarNode(((int)value).ToString(invariantCulture)),
+            TypeCode.Int64 => new YamlScalarNode(((long)value).ToString(invariantCulture)),
+            TypeCode.UInt16 => new YamlScalarNode(((ushort)value).ToString(invariantCulture)),
+            TypeCode.UInt32 => new YamlScalarNode(((uint)value).ToString(invariantCulture)),
+            TypeCode.UInt64 => new YamlScalarNode(((ulong)value).ToString(invariantCulture)),
+            TypeCode.Decimal => new YamlScalarNode(((decimal)value).ToString(invariantCulture)),
+            TypeCode.Single => new YamlScalarNode(((float)value).ToString(invariantCulture)),
+            TypeCode.Double => new YamlScalarNode(((double)value).ToString(invariantCulture)),
+            TypeCode.String => new YamlScalarNode(value.ToString()),
+            TypeCode.Boolean => new YamlScalarNode((bool)value ? "yes" : "no"),
             _ => null
         };
 
@@ -133,7 +174,7 @@ internal static class Serializer
         // explicit null
         if (node.Style == ScalarStyle.Plain &&
             node.Value != null &&
-            node.Value.Equals(s_nullScalar.Value, StringComparison.Ordinal)) return null;
+            node.Value.Equals(NullScalar.Value, StringComparison.Ordinal)) return null;
 
         static bool parseBool(string boolString)
         {

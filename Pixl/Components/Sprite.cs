@@ -2,16 +2,16 @@
 
 public struct Sprite : IComponent
 {
-    [ResourceId<Texture2d>]
-    public uint TextureId;
+    [ResourceType<Texture2d>]
+    public ResourceView Texture;
     public RectInt Rect;
     public RectInt? CenterRect;
     public Color32 Color;
     public Vec2 Pivot;
 
-    public Sprite(uint textureId, RectInt rect, Color32 color)
+    public Sprite(ResourceView texture, RectInt rect, Color32 color)
     {
-        TextureId = textureId;
+        Texture = texture;
         Rect = rect;
         Color = color;
     }

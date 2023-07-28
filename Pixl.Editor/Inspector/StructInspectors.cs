@@ -38,11 +38,17 @@ internal unsafe sealed class Color32Inspector : ObjectInspector<Color32>
     }
 }
 
-internal unsafe sealed class Vec2Inspector : ObjectInspector<Vec2>
+internal unsafe sealed class Vec2Inspector : RangeInspector<Vec2, float>
 {
+    public Vec2Inspector(FieldInfo field) : base(field)
+    {
+    }
+
+    protected override RangeAttribute<float> DefaultRange => new(float.MinValue, float.MaxValue, 0.05f);
+
     protected override void OnSubmitUI(Editor editor, string label, ref Vec2 value)
     {
-        ImGui.DragFloat2(label, ref Unsafe.AsRef<Vector2>(Unsafe.AsPointer(ref value)), 0.05f);
+        ImGui.DragFloat2(label, ref Unsafe.AsRef<Vector2>(Unsafe.AsPointer(ref value)), Range.Speed, Range.Min, Range.Max);
     }
 }
 
@@ -61,26 +67,44 @@ internal unsafe sealed class Vec3Inspector : RangeInspector<Vec3, float>
     }
 }
 
-internal unsafe sealed class Vec4Inspector : ObjectInspector<Vec4>
+internal unsafe sealed class Vec4Inspector : RangeInspector<Vec4, float>
 {
+    public Vec4Inspector(FieldInfo field) : base(field)
+    {
+    }
+
+    protected override RangeAttribute<float> DefaultRange => new(float.MinValue, float.MaxValue, 0.05f);
+
     protected override void OnSubmitUI(Editor editor, string label, ref Vec4 value)
     {
-        ImGui.DragFloat4(label, ref Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref value)), 0.05f);
+        ImGui.DragFloat4(label, ref Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref value)), Range.Speed, Range.Min, Range.Max);
     }
 }
 
-internal unsafe sealed class RectInspector : ObjectInspector<Rect>
+internal unsafe sealed class RectInspector : RangeInspector<Rect, float>
 {
+    public RectInspector(FieldInfo field) : base(field)
+    {
+    }
+
+    protected override RangeAttribute<float> DefaultRange => new(float.MinValue, float.MaxValue, 0.05f);
+
     protected override void OnSubmitUI(Editor editor, string label, ref Rect value)
     {
-        ImGui.DragFloat4(label, ref Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref value)), 0.05f);
+        ImGui.DragFloat4(label, ref Unsafe.AsRef<Vector4>(Unsafe.AsPointer(ref value)), Range.Speed, Range.Min, Range.Max);
     }
 }
 
-internal unsafe sealed class RectIntInspector : ObjectInspector<RectInt>
+internal unsafe sealed class RectIntInspector : RangeInspector<RectInt, int>
 {
+    public RectIntInspector(FieldInfo field) : base(field)
+    {
+    }
+
+    protected override RangeAttribute<int> DefaultRange => new(int.MinValue, int.MaxValue, 1);
+
     protected override void OnSubmitUI(Editor editor, string label, ref RectInt value)
     {
-        ImGui.DragInt4(label, ref value.X);
+        ImGui.DragInt4(label, ref value.X, Range.Speed, Range.Min, Range.Max);
     }
 }

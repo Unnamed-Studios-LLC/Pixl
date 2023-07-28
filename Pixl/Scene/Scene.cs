@@ -1,6 +1,5 @@
 ﻿using EntitiesDb;
 using Veldrid;
-using YamlDotNet.Core.Tokens;
 using YamlDotNet.RepresentationModel;
 
 namespace Pixl;
@@ -19,6 +18,8 @@ public sealed class Scene
     public EntityDatabase Entities { get; private set; } = new();
 
     internal Game Game { get; }
+    internal Dictionary<uint, List<YamlDocument>> FailedComponents { get; } = new();
+    internal List<YamlDocument> FailedSystems { get; } = new();
 
     public void AddSystem(ComponentSystem system)
     {
@@ -93,6 +94,8 @@ public sealed class Scene
     {
         _systems.Clear();
         Entities.Clear();
+        FailedComponents.Clear();
+        FailedSystems.Clear();
     }
 
     internal void FixedUpdate()
@@ -121,13 +124,11 @@ public sealed class Scene
             documentList.Add(document);
         }
 
+        documentList.AddRange(FailedSystems);
+
         Entities.IncludeDisabled().ForEach((uint entityId) =>
         {
-            string? name = null;
-            ref var nameComponent = ref Entities.TryGetComponent<Name>(entityId, out var found);
-            if (found) name = nameComponent.AsSpan().ToString();
-
-            var header = getDocument(new EntityHeader(entityId, name), "!entity");
+            var header = getDocument(new Entity(entityId), "!entity");
             if (header == null) return;
             documentList.Add(header);
 
@@ -138,18 +139,40 @@ public sealed class Scene
                 if (document == null) return;
                 documentList.Add(document);
             }
+
+            if (FailedComponents.TryGetValue(entityId, out var failedList))
+            {
+                documentList.AddRange(failedList);
+            }
         });
     }
 
     internal void LoadDocuments(IEnumerable<YamlDocument> documents)
     {
-        EntityHeader currentEntity = default;
+        Entity currentEntity = default;
         foreach (var document in documents)
         {
-            var parsed = Serializer.GetObject(document);
+            var parsed = Serializer.GetObject(document, out var hint);
             if (parsed == null)
             {
                 // TODO failure to parse
+                switch (hint)
+                {
+                    case "!system":
+                        FailedSystems.Add(document);
+                        break;
+                    case "!entity":
+
+                        break;
+                    case "!component":
+                        if (!FailedComponents.TryGetValue(currentEntity.Id, out var failedComponents))
+                        {
+                            failedComponents = new();
+                            FailedComponents.Add(currentEntity.Id, failedComponents);
+                        }
+                        failedComponents.Add(document);
+                        break;
+                }
                 continue;
             }
 
@@ -157,15 +180,10 @@ public sealed class Scene
             {
                 AddSystem(system);
             }
-            else if (parsed is EntityHeader entityHeader)
+            else if (parsed is Entity entityHeader)
             {
                 currentEntity = entityHeader;
                 Entities.CreateEntity(entityHeader.Id);
-
-                if (entityHeader.Name != null)
-                {
-                    Entities.AddComponent(entityHeader.Id, new Name(entityHeader.Name));
-                }
             }
             else if (parsed is IComponent component &&
                 MetaData.TryGet(parsed.GetType(), out var metaData) &&

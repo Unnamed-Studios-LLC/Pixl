@@ -97,6 +97,7 @@ internal sealed class Editor : App
             Game.Start();
             Game.Scene.AddSystem<CameraSystem>();
             Game.Scene.AddSystem<TransformSystem>();
+            Game.Scene.AddSystem<ParentSystem>();
 
             Window.Title = $"{Project.ProjectName} - Pixl Editor";
 

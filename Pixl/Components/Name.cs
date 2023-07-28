@@ -1,6 +1,6 @@
 ﻿namespace Pixl;
 
-public unsafe struct Name : IComponent
+public unsafe struct Name : IComponent, ISerializable
 {
     public const int MaxLength = 24;
 
@@ -67,5 +67,11 @@ public unsafe struct Name : IComponent
             var destination = new Span<char>(bufferPointer, _length);
             return destination;
         }
+    }
+
+    public void Serialize(ref Node node)
+    {
+        var stringValue = AsSpan().ToString();
+        node.Value("Value", stringValue);
     }
 }

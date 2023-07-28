@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 namespace Pixl
 {
     [Serializable]
+    [Inline]
     [StructLayout(LayoutKind.Sequential)]
     public struct Vec2
     {

@@ -83,7 +83,10 @@ internal class WinWindow : Window, IWin32Window
 
     public override void Start()
     {
-        _windowThread = new Thread(Run);
+        _windowThread = new Thread(Run)
+        {
+            Name = "Main Window"
+        };
         _windowThread.Start();
         _windowCreated.WaitOne();
     }

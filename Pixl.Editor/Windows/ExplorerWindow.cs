@@ -111,7 +111,7 @@ internal sealed class ExplorerWindow : EditorWindow
         _renderer.BeginBatch(_material);
         _scene.Entities.ForEach((ref Sprite sprite, ref Transform transform) =>
         {
-            _renderer.SetTexture(sprite.TextureId);
+            _renderer.SetTexture(sprite.Texture.Id);
 
             // clockwise quad vertices
             Vec3 min = sprite.Rect.Min;

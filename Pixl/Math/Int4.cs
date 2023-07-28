@@ -3,6 +3,7 @@
 namespace Pixl
 {
     [Serializable]
+    [Inline]
     [StructLayout(LayoutKind.Sequential)]
     public struct Int4
     {
