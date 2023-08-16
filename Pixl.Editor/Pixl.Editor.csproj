@@ -26,6 +26,7 @@
     <PackageReference Include="ImGui.NET" Version="1.89.7.1" PrivateAssets="compile" />
     <PackageReference Include="Microsoft.Build" Version="17.6.3" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
+    <PackageReference Include="UnnamedStudios.EntitiesDb" Version="2.1.7" />
     <PackageReference Include="Veldrid" Version="4.9.0" PrivateAssets="compile" />
   </ItemGroup>
 

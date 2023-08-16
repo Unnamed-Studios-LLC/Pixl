@@ -1,7 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
-using System.Diagnostics;
 
 namespace Pixl.SourceGenerators;
 
@@ -47,18 +46,18 @@ internal static class Extensions
             .Where(o => o.DeclaredAccessibility.HasFlag(Accessibility.Public));
     }
 
-    public static ImplmentedTypes GetImplementedTypes(this ITypeSymbol typeSymbol)
+    public static ImplementedTypes GetImplementedTypes(this ITypeSymbol typeSymbol)
     {
         if (!typeSymbol.DeclaredAccessibility.HasFlag(Accessibility.Public) ||
-            typeSymbol is not INamedTypeSymbol namedTypeSymbol) return ImplmentedTypes.None;
+            typeSymbol is not INamedTypeSymbol namedTypeSymbol) return ImplementedTypes.None;
 
-        var types = ImplmentedTypes.None;
+        var types = ImplementedTypes.None;
         foreach (var attribute in typeSymbol.GetAttributes())
         {
             if (attribute.AttributeClass != null &&
                 attribute.AttributeClass.Name.Equals("SerializableAttribute", StringComparison.Ordinal))
             {
-                types |= ImplmentedTypes.Serializable;
+                types |= ImplementedTypes.Serializable;
             }
         }
 
@@ -68,7 +67,7 @@ internal static class Extensions
             if (emptyContructor == null ||
                 !emptyContructor.DeclaredAccessibility.HasFlag(Accessibility.Public))
             {
-                return ImplmentedTypes.None;
+                return ImplementedTypes.None;
             }
 
             var baseType = typeSymbol.BaseType;
@@ -76,7 +75,7 @@ internal static class Extensions
             {
                 if (baseType.Name.Equals("ComponentSystem", StringComparison.Ordinal))
                 {
-                    types |= ImplmentedTypes.ComponentSystem;
+                    types |= ImplementedTypes.ComponentSystem;
                     break;
                 }
                 baseType = baseType.BaseType;
@@ -86,8 +85,8 @@ internal static class Extensions
         {
             foreach (var @interface in typeSymbol.AllInterfaces)
             {
-                if (@interface.Name.Equals("IComponent", StringComparison.Ordinal)) types |= ImplmentedTypes.Component;
-                if (@interface.Name.Equals("IVertex", StringComparison.Ordinal)) types |= ImplmentedTypes.Vertex;
+                if (@interface.Name.Equals("IComponent", StringComparison.Ordinal)) types |= ImplementedTypes.Component;
+                if (@interface.Name.Equals("IVertex", StringComparison.Ordinal)) types |= ImplementedTypes.Vertex;
             }
         }
         return types;

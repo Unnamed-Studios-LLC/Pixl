@@ -11,12 +11,12 @@ public sealed class ParentSystem : ComponentSystem
 
     public override void OnRegisterEvents()
     {
-        RegisterComponentEvent<Parent>(Event.OnRemove, OnRemoveParent);
+        RegisterEvent<Parent>(Event.OnRemove, OnRemoveParent);
     }
 
     public override void OnUpdate()
     {
-        Entities.ForEach(Entities, static (uint entityId, ref Parent parent, EntityDatabase entities) =>
+        Entities.ForEach(Entities, static (uint entityId, ref Parent parent, ref EntityDatabase entities) =>
         {
             if (parent.Entity.Id == parent.ChildOf) return;
 
@@ -33,17 +33,15 @@ public sealed class ParentSystem : ComponentSystem
             }
 
             // add to new children
-            ref var newChildren = ref entities.TryGetComponent<Children>(parent.Entity.Id, out var found);
+            var children = entities.TryGetBuffer<Child>(parent.Entity.Id, out var found);
             if (!found)
             {
                 return;
-                entities.AddComponent<Children>(parent.Entity.Id);
-                newChildren = ref entities.GetComponent<Children>(parent.Entity.Id);
             }
 
             parent.ChildOf = parent.Entity.Id;
-            parent.ChildIndex = newChildren.EntityIds.Length;
-            newChildren.EntityIds.Add(entityId);
+            parent.ChildIndex = children.Length;
+            children.Add(new Child(entityId));
         });
     }
 
@@ -51,13 +49,13 @@ public sealed class ParentSystem : ComponentSystem
     {
         if (parent.ChildOf == 0) return;
 
-        ref var children = ref entities.GetComponent<Children>(parent.ChildOf);
-        children.EntityIds.RemoveAtSwapBack(parent.ChildIndex);
-        if (parent.ChildIndex != children.EntityIds.Length)
+        var children = entities.GetBuffer<Child>(parent.ChildOf);
+        children.RemoveAtSwapBack(parent.ChildIndex);
+        if (parent.ChildIndex != children.Length)
         {
             // remap changed child
-            var remappedEntityId = children.EntityIds[parent.ChildIndex];
-            ref var remappedParent = ref entities.GetComponent<Parent>(remappedEntityId);
+            var remappedChild = children[parent.ChildIndex];
+            ref var remappedParent = ref entities.GetComponent<Parent>(remappedChild.Entity.Id);
             remappedParent.ChildIndex = parent.ChildIndex;
         }
 

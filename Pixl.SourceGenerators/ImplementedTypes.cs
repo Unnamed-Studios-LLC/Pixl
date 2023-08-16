@@ -1,6 +1,6 @@
 ﻿namespace Pixl.SourceGenerators
 {
-    public enum ImplmentedTypes
+    public enum ImplementedTypes
     {
         None,
         ComponentSystem = 1,

@@ -45,7 +45,7 @@ internal class TypeMetaDataGenerator : IIncrementalGenerator
             symbol is not ITypeSymbol typeSymbol) return null;
 
         var implementedTypes = typeSymbol.GetImplementedTypes();
-        if (implementedTypes == ImplmentedTypes.None) return null;
+        if (implementedTypes == ImplementedTypes.None) return null;
         return typeSymbol;
     }
 

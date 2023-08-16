@@ -10,8 +10,8 @@ internal static class TypeMetaDataTemplate
         var safeGlobalName = globalName.Replace(".", "").Replace("global::", "");
         var implementedTypes = type.GetImplementedTypes();
         var isUnmanaged = type.IsUnmanagedType;
-        var isComponent = isUnmanaged && (implementedTypes & ImplmentedTypes.Component) == ImplmentedTypes.Component;
-        var isVertex = isUnmanaged && (implementedTypes & ImplmentedTypes.Vertex) == ImplmentedTypes.Vertex;
+        var isComponent = isUnmanaged && (implementedTypes & ImplementedTypes.Component) == ImplementedTypes.Component;
+        var isVertex = isUnmanaged && (implementedTypes & ImplementedTypes.Vertex) == ImplementedTypes.Vertex;
         var className = isUnmanaged ? "UnmanagedTypeMetaData" : "TypeMetaData";
         var hasDefault = false;
 

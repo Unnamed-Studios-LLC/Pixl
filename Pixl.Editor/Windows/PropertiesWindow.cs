@@ -35,7 +35,7 @@ internal sealed class PropertiesWindow : EditorWindow
         {
             _selectedInspector = new EntityInspector();
         }
-        else _selectedInspector = value == null ? null : new DefaultObjectInspector(value.GetType());
+        else _selectedInspector = value == null ? null : ObjectInspector.Create(value.GetType());
         _selectedObject = value;
     }
 }

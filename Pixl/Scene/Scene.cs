@@ -134,10 +134,13 @@ public sealed class Scene
 
             foreach (var type in Entities.GetComponentTypes(entityId))
             {
-                var component = Entities.GetComponent(entityId, type);
-                var document = getDocument(component, "!component");
-                if (document == null) return;
-                documentList.Add(document);
+                var metaData = MetaData.Get(type);
+                foreach (var component in metaData.GetComponentObjects(Entities, entityId))
+                {
+                    var document = getDocument(component, "!component");
+                    if (document == null) return;
+                    documentList.Add(document);
+                }
             }
 
             if (FailedComponents.TryGetValue(entityId, out var failedList))

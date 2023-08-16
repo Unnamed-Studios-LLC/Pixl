@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using System.Collections.Generic;
 using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -40,7 +41,7 @@ internal unsafe sealed class Color32Inspector : ObjectInspector<Color32>
 
 internal unsafe sealed class Vec2Inspector : RangeInspector<Vec2, float>
 {
-    public Vec2Inspector(FieldInfo field) : base(field)
+    public Vec2Inspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 
@@ -54,7 +55,7 @@ internal unsafe sealed class Vec2Inspector : RangeInspector<Vec2, float>
 
 internal unsafe sealed class Vec3Inspector : RangeInspector<Vec3, float>
 {
-    public Vec3Inspector(FieldInfo field) : base(field)
+    public Vec3Inspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 
@@ -69,7 +70,7 @@ internal unsafe sealed class Vec3Inspector : RangeInspector<Vec3, float>
 
 internal unsafe sealed class Vec4Inspector : RangeInspector<Vec4, float>
 {
-    public Vec4Inspector(FieldInfo field) : base(field)
+    public Vec4Inspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 
@@ -83,7 +84,7 @@ internal unsafe sealed class Vec4Inspector : RangeInspector<Vec4, float>
 
 internal unsafe sealed class RectInspector : RangeInspector<Rect, float>
 {
-    public RectInspector(FieldInfo field) : base(field)
+    public RectInspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 
@@ -97,7 +98,7 @@ internal unsafe sealed class RectInspector : RangeInspector<Rect, float>
 
 internal unsafe sealed class RectIntInspector : RangeInspector<RectInt, int>
 {
-    public RectIntInspector(FieldInfo field) : base(field)
+    public RectIntInspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 

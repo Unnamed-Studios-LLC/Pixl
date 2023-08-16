@@ -32,11 +32,11 @@ internal sealed class SceneWindow : EditorWindow
         Open = true;
 
         _createTransformLayout = new EntityLayout();
-        _createTransformLayout.Add(Transform.Default);
+        _createTransformLayout.AddComponent(Transform.Default);
 
         _createSpriteLayout = new EntityLayout();
-        _createSpriteLayout.Add(Transform.Default);
-        _createSpriteLayout.Add(Sprite.Default);
+        _createSpriteLayout.AddComponent(Transform.Default);
+        _createSpriteLayout.AddComponent(Sprite.Default);
     }
 
     public void OpenScene()

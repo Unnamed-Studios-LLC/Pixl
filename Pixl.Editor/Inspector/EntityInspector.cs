@@ -53,15 +53,33 @@ internal sealed class EntityInspector : ObjectInspector<uint>
         // components
         foreach (var type in entities.GetComponentTypes(entityId))
         {
+            var metaData = MetaData.Get(type);
             if (!_inspectors.TryGetValue(type, out var inspector))
             {
-                inspector = new DefaultObjectInspector(type);
+                inspector = ObjectInspector.Create(type);
                 _inspectors.Add(type, inspector);
             }
 
-            var componentValue = entities.GetComponent(entityId, type);
-            componentValue = inspector.SubmitUI(editor, type.Name, componentValue);
-            if (componentValue != null && type != typeof(Disabled)) entities.SetComponent(entityId, type, componentValue);
+            if (metaData.Bufferable)
+            {
+                var bufferValue = metaData.GetBuffer(entities, entityId);
+                if (bufferValue != null)
+                {
+                    inspector.SubmitUI(editor, type.Name, bufferValue);
+                }
+            }
+            else
+            {
+                var componentValue = metaData.GetComponent(entities, entityId);
+                if (componentValue != null)
+                {
+                    componentValue = inspector.SubmitUI(editor, type.Name, componentValue);
+                    if (componentValue != null)
+                    {
+                        metaData.SetComponent(entities, entityId, componentValue);
+                    }
+                }
+            }
             ImGui.NewLine();
         }
 

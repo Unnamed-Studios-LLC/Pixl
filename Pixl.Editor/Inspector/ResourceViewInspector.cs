@@ -1,17 +1,18 @@
 ﻿using ImGuiNET;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Pixl.Editor;
 
 internal unsafe sealed class ResourceViewInspector : ObjectInspector<ResourceView>
 {
-    private readonly Type? _type;
+    private readonly Type _type;
     private readonly string _hint;
 
-    public ResourceViewInspector(Type? type)
+    public ResourceViewInspector(IEnumerable<Attribute> attributes)
     {
-        type ??= typeof(Resource);
-        _type = type;
-        _hint = $"({type.Name})";
+        _type = attributes.OfType<ResourceTypeAttribute>().FirstOrDefault()?.ResourceType ?? typeof(Resource);
+        _hint = $"({_type.Name})";
     }
 
     protected override void OnSubmitUI(Editor editor, string label, ref ResourceView value)

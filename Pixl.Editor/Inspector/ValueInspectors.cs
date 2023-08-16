@@ -5,7 +5,7 @@ namespace Pixl.Editor;
 
 internal static class ValueInspectors
 {
-    private static readonly Dictionary<Type, Func<FieldInfo, ObjectInspector>> s_inspectors = new()
+    private static readonly Dictionary<Type, Func<IEnumerable<Attribute>, ObjectInspector>> s_inspectors = new()
     {
         [typeof(sbyte)] = field => new Int8Inspector(field),
         [typeof(short)] = field => new Int16Inspector(),
@@ -29,11 +29,12 @@ internal static class ValueInspectors
         [typeof(RectInt)] = field => new RectIntInspector(field),
 
         [typeof(Entity)] = field => new EntityIdInspector(),
-        [typeof(ResourceView)] = field => new ResourceViewInspector(field.GetCustomAttribute<ResourceTypeAttribute>()?.ResourceType),
+        [typeof(ResourceView)] = attributes => new ResourceViewInspector(attributes),
     };
 
-    public static ObjectInspector? GetInspector(FieldInfo field)
+    public static ObjectInspector? GetInspector(FieldInfo field) => GetInspector(field.FieldType, field.GetCustomAttributes());
+    public static ObjectInspector? GetInspector(Type type, IEnumerable<Attribute> attributes)
     {
-        return s_inspectors.TryGetValue(field.FieldType, out var factory) ? factory(field) : null;
+        return s_inspectors.TryGetValue(type, out var factory) ? factory(attributes) : null;
     }
 }

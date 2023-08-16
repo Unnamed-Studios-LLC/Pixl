@@ -4,12 +4,12 @@ namespace Pixl;
 
 public sealed class CameraSystem : ComponentSystem
 {
-    private class RenderState
+    public class RenderState
     {
         public Material? Material;
         public Property? WorldToClipMatrix;
-        public VertexRenderer? Renderer;
         public EntityDatabase? Entities;
+        internal VertexRenderer? Renderer;
     }
 
     public Color32 ClearColor = Color32.Black;
@@ -39,7 +39,7 @@ public sealed class CameraSystem : ComponentSystem
         _renderState.Entities = Entities;
 
         renderer.Clear(ClearColor);
-        Entities.ForEach(_renderState, static (ref Camera camera, ref Transform cameraTransform, RenderState state) =>
+        Entities.ForEach(_renderState, static (ref Camera camera, ref Transform cameraTransform, ref RenderState state) =>
         {
             var renderer = state.Renderer!;
             var entitites = state.Entities!;
@@ -61,7 +61,7 @@ public sealed class CameraSystem : ComponentSystem
             state.WorldToClipMatrix?.Set(worldToClip);
 
             renderer.BeginBatch(state.Material);
-            entitites.ForEach(state, static (ref Sprite sprite, ref Transform transform, RenderState state) =>
+            entitites.ForEach(state, static (ref Sprite sprite, ref Transform transform, ref RenderState state) =>
             {
                 var renderer = state.Renderer!;
                 renderer.SetTexture(sprite.Texture.Id);

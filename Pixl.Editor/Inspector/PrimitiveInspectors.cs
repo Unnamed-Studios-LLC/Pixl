@@ -1,4 +1,5 @@
 ﻿using ImGuiNET;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -6,7 +7,7 @@ namespace Pixl.Editor;
 
 internal unsafe sealed class Int8Inspector : RangeInspector<sbyte, sbyte>
 {
-    public Int8Inspector(FieldInfo field) : base(field)
+    public Int8Inspector(IEnumerable<Attribute> attributes) : base(attributes)
     {
     }
 
